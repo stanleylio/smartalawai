@@ -1,3 +1,9 @@
+# Plot a CSV file given a logger's unique ID.
+#
+# Stanley H.I. Lio
+# hlio@hawaii.edu
+# MESH Lab
+# University of Hawaii
 import struct, math, sys, csv, calendar
 from datetime import datetime
 import matplotlib.pyplot as plt

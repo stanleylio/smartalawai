@@ -1,3 +1,9 @@
+# CRC calculation stuff.
+#
+# Stanley H.I. Lio
+# hlio@hawaii.edu
+# MESH Lab
+# University of Hawaii
 import struct, binascii
 from serial import Serial
 
