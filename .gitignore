@@ -103,6 +103,5 @@ ENV/
 .png
 .bin
 .csv
-.txt
 test data/
 obsolete/
