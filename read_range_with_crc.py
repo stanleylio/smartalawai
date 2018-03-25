@@ -118,7 +118,7 @@ if '__main__' == __name__:
         for i in range(10):
             ser.write(b'spi_flash_get_unique_id')
             flash_id = ser.readline().decode().strip()
-            if 16 == len(flash_id) and flash_id.startswith('E') and all([c in string.hexdigits]):   # !
+            if 16 == len(flash_id) and flash_id.startswith('E') and all([c in string.hexdigits for c in flash_id]): # !
                 validresponse = True
                 break
             time.sleep(0.37)
