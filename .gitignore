@@ -103,6 +103,6 @@ ENV/
 *.png
 *.bin
 *.csv
-kiwi_config_E*.txt
+kiwi_config_*.txt
 test data/
 obsolete/

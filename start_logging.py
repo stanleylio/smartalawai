@@ -15,9 +15,13 @@
 # hlio@hawaii.edu
 # MESH Lab
 # University of Hawaii
-import time, json
+import time, json, sys, logging
 from serial import Serial
-from set_rtc import set_rtc_aligned, read_rtc
+from set_rtc import set_rtc_aligned, read_rtc, ts2dt
+from common import is_logging, stop_logging
+
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 DEFAULT_PORT = 'COM18'
@@ -25,22 +29,37 @@ PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
 if '' == PORT:
     PORT = DEFAULT_PORT
 
+
 with Serial(PORT, 115200, timeout=1) as ser:
 
-    r = ''
-    for i in range(10):
-        ser.write(b'stop_logging')
-        r = ser.readline().decode()
-        #print(r)
-        if 'Logging stopped' in r:
-            break
-    ser.write(b'red_led_off')
-    ser.write(b'green_led_off')
-    ser.write(b'blue_led_off')
+    if is_logging(ser):
+        r = input('Logger is still logging. Stop it first? (yes/no; default=yes)')
+        if r.strip().lower() in ['yes', '']:
+            if not stop_logging(ser):
+                print('Logger is still logging and is not responding to stop_logging. Terminating.')
+                sys.exit()
+        else:
+            print('Cannot start logging when logger is already logging. Terminating.')
+            sys.exit()
 
-    print('Setting device clock...')
-    set_rtc_aligned(ser)
-    print('Device clock: {}'.format(read_rtc(ser)))
+    assert not is_logging(ser)
+    
+    #ser.write(b'red_led_off')
+    #ser.write(b'green_led_off')
+    #ser.write(b'blue_led_off')
+
+    print('Setting logger clock...')
+    cool = False
+    for i in range(5):
+        set_rtc_aligned(ser)
+        device_time = read_rtc(ser)
+        if abs(device_time - time.time()) <= 10:    # really should be <2s
+            cool = True
+            break
+    if not cool:
+        print('Cannot set logger clock. Terminating')
+    
+    print('Logger clock: {}'.format(ts2dt(device_time)))
 
     # TODO: check if memory is empty
     r = input('Wipe memory? (yes/no; default=no)')
