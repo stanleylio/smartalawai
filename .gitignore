@@ -100,8 +100,9 @@ ENV/
 # mypy
 .mypy_cache/
 
-.png
-.bin
-.csv
+*.png
+*.bin
+*.csv
+kiwi_config_E*.txt
 test data/
 obsolete/
