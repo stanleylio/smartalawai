@@ -44,9 +44,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
 
     assert not is_logging(ser)
     
-    #ser.write(b'red_led_off')
-    #ser.write(b'green_led_off')
-    #ser.write(b'blue_led_off')
+    ser.write(b'red_led_off green_led_off blue_led_off')
 
     print('Setting logger clock...')
     cool = False
@@ -67,7 +65,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
         ser.write(b'clear_memory')
         for i in range(400):
             line = ser.read(100)
-            print(line.decode(), end='')
+            print(line.decode(), end='', flush=True)
             if 'done.' in line.decode():
                 break
 
