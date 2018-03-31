@@ -18,7 +18,7 @@ from set_rtc import set_rtc_aligned, read_rtc, ts2dt
 from common import is_logging, stop_logging, probably_empty, get_logging_config, read_vbatt, get_flash_id
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 
 DEFAULT_PORT = 'COM18'
@@ -32,7 +32,10 @@ MAX_RETRY = 10
 with Serial(PORT, 115200, timeout=1) as ser:
 
     ser.write(b'get_logger_name')
-    logger_name = ser.readline().decode().strip()
+    try:
+        logger_name = ser.readline().decode().strip()
+    except UnicodeDecodeError:
+        logger_name = ''
     flash_id = get_flash_id(ser)
     print('Logger name: ' + logger_name)
     print('Memory ID: ' + flash_id)
@@ -75,7 +78,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
 
     # Set sample interval
     while True:
-        print('Pick a sampling interval:\n  A. 0.2 second (~43 hours)\n  B. 1 second (>9 days; default)\n  C. 60 second (>500 days)')
+        print('Pick a sampling interval:\n  A. 0.2 second (~43 hours)\n  B. 1 second (>9 days; default)\n  C. 60 second (>500 days, subject to battery capacity)')
         r = input('Your choice: ')
         r = r.strip().lower()
         if r in ['a', 'b', 'c']:
