@@ -10,25 +10,22 @@ from os.path import exists
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import describe
+from common import SAMPLE_INTERVAL_CODE_MAP
 
 
-#UNIQUE_ID = 'E4675477971F1421'
+SAMPLE_SIZE = 20    # size of one sample in bytes
+PAGE_SIZE = 256
+
+
 UNIQUE_ID = input('ID=')
 
-
-binfilename = 'flash_dump_' + UNIQUE_ID + '.bin'
-configfilename = 'kiwi_config_' + UNIQUE_ID + '.txt'
+binfilename = UNIQUE_ID + '.bin'
+configfilename = UNIQUE_ID + '.config'
 outputfilename = UNIQUE_ID + '.csv'
 
 assert exists(binfilename)
 assert exists(configfilename)
 #assert not exists(outputfilename)
-
-SAMPLE_SIZE = 20    # size of one sample in bytes
-PAGE_SIZE = 256
-SAMPLE_INTERVAL_S = 1/5
-
-# - - -
 
 print('Reading binary file {}'.format(binfilename))
 buf = bytearray()
@@ -62,12 +59,14 @@ for page in range(len(buf)//PAGE_SIZE):
 # reconstruct time axis using logging start time and sample interval
 print('Reading config {}'.format(configfilename))
 config = json.loads(open(configfilename).read())
-start_time = config['start_time']
+logging_start_time = config['logging_start_time']
+logging_interval_code = config['logging_interval_code']
+
 
 print('Reconstructing time axis...')
 ts = np.linspace(0, len(D) - 1, num=len(D))
-ts *= SAMPLE_INTERVAL_S
-ts += start_time
+ts *= SAMPLE_INTERVAL_CODE_MAP[logging_interval_code]
+ts += logging_start_time
 #print(ts[0:10])
 #sys.exit()
 

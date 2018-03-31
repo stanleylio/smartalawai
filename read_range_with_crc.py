@@ -4,16 +4,19 @@
 # hlio@hawaii.edu
 # MESH Lab
 # University of Hawaii
-import time, logging, sys, json, string
+import time, logging, sys, json
 from os.path import exists
 from serial import Serial
 from crc_check import check_response
+from common import is_logging, stop_logging, get_logging_config, read_vbatt, get_flash_id, InvalidResponseException, SAMPLE_INTERVAL_CODE_MAP
 
 
 SPI_FLASH_SIZE_BYTE = 16*1024*1024
 SPI_FLASH_PAGE_SIZE_BYTE = 256
 
+
 logging.basicConfig(level=logging.DEBUG)
+
 
 # read memory range from here
 BEGIN = 0
@@ -35,7 +38,8 @@ def read_range_core(begin, end):
     for retry in range(MAX_RETRY):
         ser.flushInput()
         ser.flushOutput()
-        logging.debug(cmd.strip())
+        #logging.debug(cmd.strip())
+        logging.debug('Reading {:X} to {:X} ({:.2f}%)'.format(begin, end, end/SPI_FLASH_SIZE_BYTE*100))
         ser.write(cmd.encode())
         expected_length = end - begin + 1 + 4
         line = ser.read(expected_length)
@@ -71,42 +75,17 @@ if '__main__' == __name__:
 
     with Serial(PORT, 115200, timeout=2) as ser:
 
+        ser.write(b'\n\n\n')
+        ser.flushOutput()
+        ser.flushInput()
+
         stop_logging_time = None
 
-        validresponse = False
-        for i in range(10):
-            ser.write(b'is_logging')
-            r = ser.read(size=1).decode().strip()
-            #print(r)
-            if r in ['0', '1']:
-                validresponse = True
-                break
-            time.sleep(0.37)    # serial has low priority when logger is logging. gotta retry.
-            print('(Retrying...)')
-        if not validresponse:
-            print('Invalid/no response from logger. Terminating.')
-            sys.exit()
-            
-        if '1' == r:
+        if is_logging(ser):
             r = input('Logger is still logging. Stop logging? (yes/no; default=no)')
             if r.strip().lower() == 'yes':
-                stopped = False
-                for i in range(10):
-                    ser.write(b'stop_logging')
-                    ser.flushOutput()
-                    r = ser.readline()  # not expecting anything, but still.
-                    #r = ser.readline()  # expected response: 'Logging stopped.\n'
-                    #print(r)
-                    
-                    ser.write(b'is_logging')
-                    ser.flushOutput()
-                    r = ser.read(size=1).decode().strip()
-                    #print(r)
-                    if '0' == r:
-                        stopped = True
-                        break
-                if not stopped:
-                    print('Logger not responding to stop_logging. Terminating.')
+                if not stop_logging(ser):
+                    print('Could not stop logger. Terminating.')
                     sys.exit()
 
                 stop_logging_time = time.time()
@@ -114,35 +93,39 @@ if '__main__' == __name__:
                 print('No change made. Terminating.')
                 sys.exit()
 
-        validresponse = False
-        for i in range(10):
-            ser.write(b'spi_flash_get_unique_id')
-            flash_id = ser.readline().decode().strip()
-            if 16 == len(flash_id) and flash_id.startswith('E') and all([c in string.hexdigits for c in flash_id]): # !
-                validresponse = True
-                break
-            time.sleep(0.37)
-            
-        if not validresponse:
+        try:
+            flash_id = get_flash_id(ser)
+            print('Memory ID: {}'.format(flash_id))
+        except InvalidResponseException:
             print('Cannot read logger ID. Terminating.')
             sys.exit()
 
-        print('Memory ID: {}'.format(flash_id))
+        metadata = get_logging_config(ser)
+        logging.debug(metadata)
 
+        #store meta data to config file
+        configfilename = '{}.config'.format(flash_id)
+        if exists(configfilename):
+            config = json.loads(open(configfilename).read())
+        else:
+            # in case the config file doesn't exist (could have been (re)moved by the user)
+            print('WARNING: config file not found.')
+            config = {}
+        config['logging_start_time'] = metadata['logging_start_time']
+        config['logging_stop_time'] = metadata['logging_stop_time']
+        config['logging_interval_code'] = metadata['logging_interval_code']
         if stop_logging_time is not None:
-            #store to kiwi_config...
-            configfilename = 'kiwi_config_{}.txt'.format(flash_id)
-            if exists(configfilename):
-                config = json.loads(open(configfilename).read())
-            else:
-                # in case the config file doesn't exist (could have been (re)moved by the user)
-                print('WARNING: config file not found.')
-                config = {}
             config['stop_logging_time'] = stop_logging_time
-            config = json.dumps(config, separators=(',', ':'))
-            open('kiwi_config_{}.txt'.format(flash_id), 'w').write(config)
+        else:
+            if 'stop_logging_time' in config:
+                del config['stop_logging_time']     # remove old record if any
+        config['vbatt_post'] = read_vbatt(ser)
+        logging.debug(config)
+        open(configfilename, 'w').write(json.dumps(config, separators=(',', ':')))
 
-        fn = 'flash_dump_{}.bin'.format(flash_id)
+        print('Sample interval = {} second'.format(SAMPLE_INTERVAL_CODE_MAP[config['logging_interval_code']]))
+
+        fn = '{}.bin'.format(flash_id)
         if exists(fn):
             r = input(fn + ' already exists. Overwrite? (yes/no; default=no)')
             if r.strip().lower() != 'yes':
@@ -156,12 +139,10 @@ if '__main__' == __name__:
                 if len(line) <= 0:
                     raise RuntimeError('wut?')
                 if STOP_ON_EMPTY and all([0xFF == b for b in line]):
-# is this right? should I stop here?
                     print('Reached empty section in memory. Terminating.')
                     break
                 fout.write(line)
         endtime = time.time()
 
     print('Output file: {}'.format(fn))
-    print('Took {:.1f} minutes.'.format((endtime - starttime)/60))
-    print('Done.')
+    input('Took {:.1f} minutes. Press RETURN to exit.'.format((endtime - starttime)/60))
