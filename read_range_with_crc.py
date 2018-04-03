@@ -8,14 +8,14 @@ import time, logging, sys, json
 from os.path import exists
 from serial import Serial
 from crc_check import check_response
-from common import is_logging, stop_logging, get_logging_config, read_vbatt, get_flash_id, InvalidResponseException, SAMPLE_INTERVAL_CODE_MAP
+from common import is_logging, stop_logging, get_logging_config, read_vbatt, get_logger_name, get_flash_id, InvalidResponseException, SAMPLE_INTERVAL_CODE_MAP
 
 
 SPI_FLASH_SIZE_BYTE = 16*1024*1024
 SPI_FLASH_PAGE_SIZE_BYTE = 256
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 
 # read memory range from here
@@ -39,7 +39,7 @@ def read_range_core(begin, end):
         ser.flushInput()
         ser.flushOutput()
         #logging.debug(cmd.strip())
-        logging.debug('Reading {:X} to {:X} ({:.2f}%)'.format(begin, end, end/SPI_FLASH_SIZE_BYTE*100))
+        #logging.debug('Reading {:X} to {:X} ({:.2f}%)'.format(begin, end, end/SPI_FLASH_SIZE_BYTE*100))
         ser.write(cmd.encode())
         expected_length = end - begin + 1 + 4
         line = ser.read(expected_length)
@@ -94,10 +94,12 @@ if '__main__' == __name__:
                 sys.exit()
 
         try:
+            name = get_logger_name(ser)
+            print('Name: {}'.format(name))
             flash_id = get_flash_id(ser)
-            print('Memory ID: {}'.format(flash_id))
+            print('ID: {}'.format(flash_id))
         except InvalidResponseException:
-            print('Cannot read logger ID. Terminating.')
+            print('Cannot read logger name/ID. Terminating.')
             sys.exit()
 
         metadata = get_logging_config(ser)
@@ -135,6 +137,7 @@ if '__main__' == __name__:
         starttime = time.time()
         with open(fn, 'wb') as fout:
             for begin, end in split_range(BEGIN, END, STRIDE):
+                print('Reading {:X} to {:X} ({:.2f}%)'.format(begin, end, end/SPI_FLASH_SIZE_BYTE*100))
                 line = read_range_core(begin, end)
                 if len(line) <= 0:
                     raise RuntimeError('wut?')

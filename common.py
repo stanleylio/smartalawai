@@ -1,11 +1,14 @@
 #
-# logging_start_time: logger's RTC time when logging started
-# logging_stop_time: logger's RTC time when logging stopped
-# logging_interval_code: internal value corresponding to sampling interval
-# start_logging_time: user's computer time when logging started
-# stop_logging_time: user's computer time if and when logging stopped by user (while logger was still running)
-# flash_id
+# Metadata:
+# logger_name:              Logger's name given by user (maximum 15 characters).
+# flash_id:                 Logger's unique hardware ID.
+# logging_start_time:       Logger's RTC time when logging started. Recorded in EEPROM by logger.
+# logging_stop_time:        Logger's RTC time when logging stopped. Recorded in EEPROM by logger. Read as 0 if logger is running, or if logging was stopped abnormally (power outage, reset).
+# logging_interval_code:    Code representing sampling interval. A numeric code used internally by the firmware.
+# start_logging_time:       User's computer time when logging started.
+# stop_logging_time:        User's computer time if and when logging is stopped by user (absent if logger wasn't logging).
 #
+# interval codes: 0: 0.2s, 1: 1s, 2: 60s
 import logging, random, time, string
 
 
@@ -30,7 +33,7 @@ def is_logging(ser, maxretry=10):
             r = ser.readline().decode().strip()
             logging.debug('is_logging(): ' + r)
             return '1' == r[0]
-        except IndexError:
+        except (UnicodeDecodeError, IndexError):
             pass
         time.sleep(random.randint(0, 90)/100)
 
@@ -58,10 +61,14 @@ def stop_logging(ser, maxretry=10):
 
 def probably_empty(ser, maxretry=5):
     ser.write(b'is_logging')
-    r = ser.readline().decode().strip().split(',')
-    if not ('0' == r[1]) and ('0' == r[2]):
-        logging.debug('probably_empty(): memory indices not clean')
-        return False
+    line = ser.readline().decode().strip()
+    try:
+        r = line.split(',')
+        if not ('0' == r[1]) and ('0' == r[2]):
+            logging.debug('probably_empty(): memory indices not clean')
+            return False
+    except IndexError:
+        raise InvalidResponseException('Invalid/no response from logger: ' + line)
     
     for i in range(maxretry):
         ser.write(b'spi_flash_read_range0,ff\n')
@@ -75,6 +82,7 @@ def probably_empty(ser, maxretry=5):
                 return False
         else:
             continue
+        
     ser.flushInput()
     return False
 
@@ -90,7 +98,7 @@ def get_logging_config(ser, maxretry=10):
                 return dict(zip(tags, [int(tmp) for tmp in line]))
         except:
             pass
-    raise InvalidResponseException('Invalid/no response from logger: ' + r)
+    raise InvalidResponseException('Invalid/no response from logger: ' + line)
 
 
 def read_vbatt(ser, maxretry=10):
@@ -99,8 +107,24 @@ def read_vbatt(ser, maxretry=10):
             ser.write(b'read_sys_volt')
             r = ser.readline().decode().strip().split(',')
             return round(float(r[1]), 2)
-        except ValueError:
+        except (UnicodeDecodeError, ValueError, IndexError):
             pass
+    raise InvalidResponseException('Invalid/no response from logger: ' + r)
+
+
+def get_logger_name(ser, maxretry=10):
+    logging.debug('get_logger_name()')
+    ser.flushOutput()
+    ser.flushInput()
+
+    for i in range(maxretry):
+        ser.write(b'get_logger_name')
+        try:
+            r = ser.readline().decode().strip()
+            return r
+        except UnicodeDecodeError:      # the name is probably not set
+            return ''
+        time.sleep(random.randint(0, 50)/100)
     raise InvalidResponseException('Invalid/no response from logger: ' + r)
 
 
@@ -111,11 +135,33 @@ def get_flash_id(ser, maxretry=10):
 
     for i in range(maxretry):
         ser.write(b'spi_flash_get_unique_id')
-        flash_id = ser.readline().decode().strip()
-        if 16 == len(flash_id) and flash_id.startswith('E') and all([c in string.hexdigits for c in flash_id]): # !
-            return flash_id
+        try:
+            r = ser.readline().decode().strip()
+            if 16 == len(r) and r.startswith('E') and all([c in string.hexdigits for c in r]):
+                return r
+        except UnicodeDecodeError:
+            pass
         time.sleep(random.randint(0, 50)/100)
     raise InvalidResponseException('Invalid/no response from logger: ' + r)
+
+
+def get_metadata(ser, maxretry=10):
+    flash_id = get_flash_id(ser, maxretry)
+    logger_name = get_logger_name(ser, maxretry)
+    running = is_logging(ser)
+    metadata = get_logging_config(ser, maxretry)
+    
+    config = {}
+    config['flash_id'] = flash_id
+    config['logger_name'] = logger_name
+    config['is_logging'] = running
+    config['logging_start_time'] = metadata['logging_start_time']
+    config['logging_stop_time'] = metadata['logging_stop_time']
+    config['logging_interval_code'] = metadata['logging_interval_code']
+
+    return config
+    
+
 
 
 if '__main__' == __name__:
