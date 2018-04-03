@@ -104,5 +104,6 @@ ENV/
 *.bin
 *.csv
 *.config
+data/
 test data/
 obsolete/
