@@ -9,6 +9,11 @@
 # stop_logging_time:        User's computer time if and when logging is stopped by user (absent if logger wasn't logging).
 #
 # interval codes: 0: 0.2s, 1: 1s, 2: 60s
+#
+# MESH Lab
+# University of Hawaii
+# Copyright 2018 Stanley H.I. Lio
+# hlio@hawaii.edu
 import logging, random, time, string
 
 
@@ -20,8 +25,8 @@ class InvalidResponseException(Exception):
 
 
 def is_logging(ser, maxretry=10):
-    ser.flushOutput()
-    ser.flushInput()
+    #ser.reset_output_buffer()
+    #ser.reset_input_buffer()
 
     for i in range(maxretry):
         try:
@@ -29,29 +34,29 @@ def is_logging(ser, maxretry=10):
                 logging.debug('is_logging(): retrying...')
             ser.write(b'\n')
             ser.write(b'is_logging')
-            ser.flushOutput()
+            #ser.reset_output_buffer()
             r = ser.readline().decode().strip()
             logging.debug('is_logging(): ' + r)
             return '1' == r[0]
         except (UnicodeDecodeError, IndexError):
             pass
-        time.sleep(random.randint(0, 90)/100)
+        time.sleep(random.randint(0, 50)/100)
 
     raise InvalidResponseException('Invalid/no response from logger: ' + r)
 
 
 def stop_logging(ser, maxretry=10):
     logging.debug('stop_logging()')
-    ser.flushOutput()
-    ser.flushInput()
+    #ser.reset_output_buffer()
+    #ser.reset_input_buffer()
 
     stopped = False
     for i in range(maxretry):
         if i > 0:
             logging.debug('stop_logging(): retrying...')
         ser.write(b'stop_logging')
-        ser.flushOutput()
-
+        time.sleep(random.randint(0, 50)/100)
+        
         if not is_logging(ser):
             stopped = True
             break
@@ -75,15 +80,14 @@ def probably_empty(ser, maxretry=5):
         r = ser.readline()
         if 256+4 == len(r):
             if all([0xFF == rr for rr in r[:-4]]):
-                ser.flushInput()
+                #ser.reset_input_buffer()
                 return True
             else:
-                ser.flushInput()
+                #ser.reset_input_buffer()
                 return False
         else:
             continue
         
-    ser.flushInput()
     return False
 
 
@@ -98,6 +102,7 @@ def get_logging_config(ser, maxretry=10):
                 return dict(zip(tags, [int(tmp) for tmp in line]))
         except:
             pass
+        time.sleep(random.randint(0, 50)/100)
     raise InvalidResponseException('Invalid/no response from logger: ' + line)
 
 
@@ -114,8 +119,8 @@ def read_vbatt(ser, maxretry=10):
 
 def get_logger_name(ser, maxretry=10):
     logging.debug('get_logger_name()')
-    ser.flushOutput()
-    ser.flushInput()
+    #ser.reset_output_buffer()
+    #ser.reset_input_buffer()
 
     for i in range(maxretry):
         ser.write(b'get_logger_name')
@@ -130,8 +135,8 @@ def get_logger_name(ser, maxretry=10):
 
 def get_flash_id(ser, maxretry=10):
     logging.debug('get_flash_id()')
-    ser.flushOutput()
-    ser.flushInput()
+    #ser.reset_output_buffer()
+    #ser.reset_input_buffer()
 
     for i in range(maxretry):
         ser.write(b'spi_flash_get_unique_id')
@@ -162,15 +167,18 @@ def get_metadata(ser, maxretry=10):
     return config
     
 
-
-
 if '__main__' == __name__:
     import logging
     from serial import Serial
 
     logging.basicConfig(level=logging.DEBUG)
 
-    with Serial('COM18', 115200, timeout=1) as ser:
+    DEFAULT_PORT = '/dev/ttyS0'
+    PORT = input('PORT=? (default={})'.format(DEFAULT_PORT)).strip()
+    if '' == PORT:
+        PORT = DEFAULT_PORT
+
+    with Serial(PORT, 115200, timeout=1) as ser:
         print(is_logging(ser))
         print(read_vbatt(ser))
         print(probably_empty(ser))

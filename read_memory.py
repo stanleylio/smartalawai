@@ -1,11 +1,14 @@
 # Read the logger's memory into a binary file. Stops when empty page is reached.
 #
-# Stanley H.I. Lio
-# hlio@hawaii.edu
+# Formally "read_range_with_crc.py"
+#
 # MESH Lab
 # University of Hawaii
+# Copyright 2018 Stanley H.I. Lio
+# hlio@hawaii.edu
 import time, logging, sys, json
-from os.path import exists
+from os import makedirs
+from os.path import join, exists
 from serial import Serial
 from crc_check import check_response
 from common import is_logging, stop_logging, get_logging_config, read_vbatt, get_logger_name, get_flash_id, InvalidResponseException, SAMPLE_INTERVAL_CODE_MAP
@@ -15,7 +18,7 @@ SPI_FLASH_SIZE_BYTE = 16*1024*1024
 SPI_FLASH_PAGE_SIZE_BYTE = 256
 
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.DEBUG)
 
 
 # read memory range from here
@@ -36,8 +39,9 @@ def read_range_core(begin, end):
     cmd = 'spi_flash_read_range{:x},{:x}\n'.format(begin, end)
 
     for retry in range(MAX_RETRY):
-        ser.flushInput()
-        ser.flushOutput()
+        ser.reset_input_buffer()
+        ser.reset_output_buffer()
+        
         #logging.debug(cmd.strip())
         #logging.debug('Reading {:X} to {:X} ({:.2f}%)'.format(begin, end, end/SPI_FLASH_SIZE_BYTE*100))
         ser.write(cmd.encode())
@@ -68,16 +72,16 @@ def split_range(begin, end, pkt_size):
 
 if '__main__' == __name__:
 
-    DEFAULT_PORT = 'COM18'
+    DEFAULT_PORT = '/dev/ttyS0'
     PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
     if '' == PORT:
         PORT = DEFAULT_PORT
 
     with Serial(PORT, 115200, timeout=2) as ser:
 
+        ser.reset_input_buffer()
+        ser.reset_output_buffer()
         ser.write(b'\n\n\n')
-        ser.flushOutput()
-        ser.flushInput()
 
         stop_logging_time = None
 
@@ -102,17 +106,22 @@ if '__main__' == __name__:
             print('Cannot read logger name/ID. Terminating.')
             sys.exit()
 
+        #if '' == name:
+        #    name = 'noname'
+        #makedirs(join('data', flash_id + ' ({})'.format(logger_name)), exist_ok=True)
+        makedirs(join('data', flash_id), exist_ok=True)
+
+        # store meta data to config file
         metadata = get_logging_config(ser)
         logging.debug(metadata)
 
-        #store meta data to config file
-        configfilename = '{}.config'.format(flash_id)
+        configfilename = '{}_{}.config'.format(flash_id, metadata['logging_start_time'])
+        configfilename = join('data', flash_id, configfilename)
+        config = {}
         if exists(configfilename):
             config = json.loads(open(configfilename).read())
         else:
-            # in case the config file doesn't exist (could have been (re)moved by the user)
-            print('WARNING: config file not found.')
-            config = {}
+            logging.warning('No existing config file.')
         config['logging_start_time'] = metadata['logging_start_time']
         config['logging_stop_time'] = metadata['logging_stop_time']
         config['logging_interval_code'] = metadata['logging_interval_code']
@@ -127,7 +136,8 @@ if '__main__' == __name__:
 
         print('Sample interval = {} second'.format(SAMPLE_INTERVAL_CODE_MAP[config['logging_interval_code']]))
 
-        fn = '{}.bin'.format(flash_id)
+        fn = '{}_{}.bin'.format(flash_id, metadata['logging_start_time'])
+        fn = join('data', flash_id, fn)
         if exists(fn):
             r = input(fn + ' already exists. Overwrite? (yes/no; default=no)')
             if r.strip().lower() != 'yes':

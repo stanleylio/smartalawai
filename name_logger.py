@@ -1,9 +1,9 @@
 # Give the logger a name.
 #
-# Stanley H.I. Lio
-# hlio@hawaii.edu
 # MESH Lab
 # University of Hawaii
+# Copyright 2018 Stanley H.I. Lio
+# hlio@hawaii.edu
 import sys, time
 from serial import Serial
 from common import get_logger_name, get_flash_id, is_logging, stop_logging

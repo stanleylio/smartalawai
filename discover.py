@@ -1,9 +1,9 @@
 # Print metadata of attached logger.
 #
-# Stanley H.I. Lio
-# hlio@hawaii.edu
 # MESH Lab
 # University of Hawaii
+# Copyright 2018 Stanley H.I. Lio
+# hlio@hawaii.edu
 import time, logging
 from serial import Serial
 from common import get_logger_name, get_flash_id, read_vbatt, is_logging, get_logging_config, InvalidResponseException
@@ -13,7 +13,7 @@ from set_rtc import read_rtc, ts2dt
 logging.basicConfig(level=logging.WARNING)
 
 
-DEFAULT_PORT = 'COM18'
+DEFAULT_PORT = '/dev/ttyS0'
 PORT = input('PORT=? (default={})'.format(DEFAULT_PORT)).strip()
 if '' == PORT:
     PORT = DEFAULT_PORT
@@ -41,8 +41,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
             else:
                 r = 'No existing data.'
 
-            print('Name="{}", ID={}. RTC={}, battery={:.2f}V.'.format(name, flash_id, ts2dt(rtc), vbatt))
-            print('{}. {}'.format(running, r))
+            print('NAME="{}", ID={}. RTC={}, BATTERY={:.2f}V. {}. {}'.format(name, flash_id, ts2dt(rtc), vbatt, running, r))
 
             time.sleep(1)
             

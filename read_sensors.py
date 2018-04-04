@@ -1,9 +1,9 @@
 # Read all sensors and plot in real-time.
 #
-# Stanley H.I. Lio
-# hlio@hawaii.edu
 # MESH Lab
 # University of Hawaii
+# Copyright 2018 Stanley H.I. Lio
+# hlio@hawaii.edu
 import time, functools, logging, calendar
 from serial import Serial
 from itertools import cycle
@@ -35,7 +35,7 @@ def dt2ts(dt=None):
     return calendar.timegm(dt.timetuple()) + (dt.microsecond)*(1e-6)
 
 
-DEFAULT_PORT = 'COM18'
+DEFAULT_PORT = '/dev/ttyS0'
 PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
 if '' == PORT:
     PORT = DEFAULT_PORT

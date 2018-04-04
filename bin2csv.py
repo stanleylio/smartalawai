@@ -1,10 +1,13 @@
 # Convert a flash dump (.bin) file to a CSV file.
-# Timestamps are reconstructed from the config file "kiwi_config_[UNIQUE ID].txt"
 #
-# Stanley H.I. Lio
-# hlio@hawaii.edu
+# Data are taken from "[ID].bin"
+# Timestamps are reconstructed from the config file "[ID].config"
+# Output will be named "[ID].csv"
+#
 # MESH Lab
 # University of Hawaii
+# Copyright 2018 Stanley H.I. Lio
+# hlio@hawaii.edu
 import struct, math, sys, csv, json
 from os.path import exists
 import matplotlib.pyplot as plt
@@ -13,7 +16,7 @@ from scipy.stats import describe
 from common import SAMPLE_INTERVAL_CODE_MAP
 
 
-SAMPLE_SIZE = 20    # size of one sample in bytes
+SAMPLE_SIZE = 20    # size of one sample in byte
 PAGE_SIZE = 256
 
 

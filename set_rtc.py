@@ -4,10 +4,10 @@
 # oscillator, the final version may not even have
 # an RTC.
 #
-# Stanley H.I. Lio
-# hlio@hawaii.edu
 # MESH Lab
 # University of Hawaii
+# Copyright 2018 Stanley H.I. Lio
+# hlio@hawaii.edu
 import time, calendar, math
 from datetime import datetime
 from serial import Serial
@@ -35,8 +35,7 @@ def set_rtc_aligned(ser):
         currenttime = time.time()
         if math.floor(currenttime*100)%100 == 0:      # it has just turned x.00y...
             #print(currenttime)
-            set_rtc(ser, currenttime)
-            break
+            return float(set_rtc(ser, currenttime))
         else:
             time.sleep(0.001)
     else:

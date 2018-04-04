@@ -29,7 +29,7 @@ def check(cmd, test):
         print('FAIL! ({})'.format(cmd))
 
 
-DEFAULT_PORT = 'COM18'
+DEFAULT_PORT = '/dev/ttyS0'
 PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
 if '' == PORT:
     PORT = DEFAULT_PORT
@@ -84,7 +84,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
         Vcc = float(Vcc)
         Vbatt = float(Vbatt)
         #print('Vcc = {}V, Vbatt = {}V'.format(Vcc, Vbatt))
-        return abs(Vcc - 3.3)/3.3 < 0.1 and Vbatt >= Vcc
+        return abs(Vcc - 3.3)/3.3 < 0.1 and Vbatt >= 1.8
     check('read_sys_volt', f)
 
     

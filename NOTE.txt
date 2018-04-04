@@ -3,10 +3,10 @@ A typical workflow:
 Start logging:
 	start_logging.py
 
-Deploy and recovery
+(Deploy and recovery)
 
 Stop logging and download data:
-	read_range_with_crc.py
+	read_memory.py
 
 Convert binary file to CSV:
 	bin2csv.py
