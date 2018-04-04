@@ -107,5 +107,5 @@ plt.grid(True)
 plt.gcf().autofmt_xdate()
 ax1.xaxis.set_major_formatter(DateFormatter('%b %d %H:%M:%S'))
 
-plt.savefig(UNIQUE_ID + '.png', dpi=600)
+plt.savefig(flash_id + '.png', dpi=600)
 plt.show()
