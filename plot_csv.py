@@ -36,6 +36,9 @@ from bin2csv import find
 
 d = find('data/*')
 fn = find(join(d, '*.csv'))
+if fn is None:
+    print('No CSV file found. Have you run bin2csv.py? Terminating.')
+    sys.exit()
 
 
 #D = []

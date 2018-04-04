@@ -18,7 +18,7 @@ SPI_FLASH_SIZE_BYTE = 16*1024*1024
 SPI_FLASH_PAGE_SIZE_BYTE = 256
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 
 # read memory range from here
