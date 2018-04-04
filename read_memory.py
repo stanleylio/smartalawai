@@ -158,4 +158,6 @@ if '__main__' == __name__:
         endtime = time.time()
 
     print('Output file: {}'.format(fn))
-    input('Took {:.1f} minutes. Press RETURN to exit.'.format((endtime - starttime)/60))
+    #input('Took {:.1f} minutes. Press RETURN to exit.'.format((endtime - starttime)/60))
+    print('Took {:.1f} minutes.'.format((endtime - starttime)/60))
+    

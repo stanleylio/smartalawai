@@ -192,4 +192,5 @@ with Serial(PORT, 115200, timeout=1) as ser:
             except:
                 pass'''
             
-input('Done. Hit RETURN to exit.')
+#input('Done. Hit RETURN to exit.')
+print('Done.')
