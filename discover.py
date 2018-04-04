@@ -41,7 +41,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
             else:
                 r = 'No existing data.'
 
-            print('NAME="{}", ID={}. RTC={}, BATTERY={:.2f}V. {}. {}'.format(name, flash_id, ts2dt(rtc), vbatt, running, r))
+            print('NAME="{}" ID={} RTC={}, BATTERY={:.2f}V. {}. {}'.format(name, flash_id, ts2dt(rtc), vbatt, running, r))
 
             time.sleep(1)
             
