@@ -9,8 +9,8 @@
 # Copyright 2018 Stanley H.I. Lio
 # hlio@hawaii.edu
 import struct, math, sys, csv, json
-from os.path import exists
-import matplotlib.pyplot as plt
+from glob import glob
+from os.path import join, exists, basename
 import numpy as np
 from scipy.stats import describe
 from common import SAMPLE_INTERVAL_CODE_MAP
@@ -20,11 +20,18 @@ SAMPLE_SIZE = 20    # size of one sample in byte
 PAGE_SIZE = 256
 
 
-UNIQUE_ID = input('ID=')
+#flash_id = input('ID=').strip()
+#FN = glob('data/{}/{}_*.bin'.format(flash_id, flash_id))
+#FNT = [int(basename(fn).split('.')[0].split('_')[1]) for fn in FN]
 
-binfilename = UNIQUE_ID + '.bin'
-configfilename = UNIQUE_ID + '.config'
-outputfilename = UNIQUE_ID + '.csv'
+# Names of the binary data file, the configuration file, and the output file
+#binfilename = 'data/{}/{}_{}.bin'.format(flash_id, flash_id, max(FNT))
+#configfilename = 'data/{}/{}_{}.config'.format(flash_id, flash_id, max(FNT))
+#outputfilename = 'data/{}/{}_{}.csv'.format(flash_id, flash_id, max(FNT))
+
+binfilename = input('Input path to binary file: ').strip()
+configfilename = binfilename.rsplit('.')[0] + '.config'
+outputfilename = configfilename.rsplit('.')[0] + '.csv'
 
 assert exists(binfilename)
 assert exists(configfilename)

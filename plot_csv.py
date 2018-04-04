@@ -12,9 +12,6 @@ import numpy as np
 from scipy.stats import describe
 
 
-#UNIQUE_ID = 'E4675477974A412A'
-UNIQUE_ID = input('ID=')
-
 
 SAMPLE_SIZE = 20    # size of one sample in bytes
 PAGE_SIZE = 256
@@ -32,7 +29,9 @@ def ts2dt(ts=None):
     return datetime.utcfromtimestamp(ts)
 
 
-fn = UNIQUE_ID + '.csv'
+#fn = UNIQUE_ID + '.csv'
+fn = input('Path to the CSV file: ').strip()
+
 
 #D = []
 #for line in csv.reader(open(fn, newline='')):
