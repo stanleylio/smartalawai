@@ -45,6 +45,6 @@ with Serial(PORT, 115200, timeout=1) as ser:
 
             time.sleep(1)
             
-        except (InvalidResponseException, UnicodeDecodeError, ValueError, IndexError) as e:
+        except (InvalidResponseException, UnicodeDecodeError, ValueError, IndexError, TypeError) as e:
             logging.exception('')
             time.sleep(1)
