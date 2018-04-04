@@ -6,6 +6,7 @@
 # hlio@hawaii.edu
 import struct, math, sys, csv, calendar
 from datetime import datetime
+from os.path import join
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import numpy as np
@@ -30,7 +31,11 @@ def ts2dt(ts=None):
 
 
 #fn = UNIQUE_ID + '.csv'
-fn = input('Path to the CSV file: ').strip()
+#fn = input('Path to the CSV file: ').strip()
+from bin2csv import find
+
+d = find('data/*')
+fn = find(join(d, '*.csv'))
 
 
 #D = []

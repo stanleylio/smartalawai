@@ -23,7 +23,7 @@ from set_rtc import set_rtc_aligned, read_rtc, ts2dt
 from common import is_logging, stop_logging, probably_empty, get_logging_config, read_vbatt, get_flash_id, get_logger_name, InvalidResponseException
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 
 DEFAULT_PORT = '/dev/ttyS0'
