@@ -37,10 +37,12 @@ def is_logging(ser, maxretry=10):
             #ser.reset_output_buffer()
             r = ser.readline().decode().strip()
             logging.debug('is_logging(): ' + r)
-            return '1' == r[0]
+            r = r.split(',')
+            if len(r) == 3 and r[0] in ['0', '1']:
+                return '1' == r[0]
         except (UnicodeDecodeError, IndexError):
             pass
-        time.sleep(random.randint(0, 50)/100)
+        time.sleep(random.randint(0, 90)/100)
 
     raise InvalidResponseException('Invalid/no response from logger: ' + r)
 
@@ -55,7 +57,7 @@ def stop_logging(ser, maxretry=10):
         if i > 0:
             logging.debug('stop_logging(): retrying...')
         ser.write(b'stop_logging')
-        time.sleep(random.randint(0, 50)/100)
+        time.sleep(random.randint(0, 90)/100)
         
         if not is_logging(ser):
             stopped = True
@@ -141,8 +143,13 @@ def get_flash_id(ser, maxretry=10):
     for i in range(maxretry):
         ser.write(b'spi_flash_get_unique_id')
         try:
+            time.sleep(0.1)
             r = ser.readline().decode().strip()
+            logging.debug(r)
+            if len(r) <= 0:
+                continue
             if 16 == len(r) and r.startswith('E') and all([c in string.hexdigits for c in r]):
+                ser.reset_input_buffer()
                 return r
         except UnicodeDecodeError:
             pass
