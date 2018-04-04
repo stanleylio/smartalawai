@@ -95,7 +95,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
 
     # Set sample interval
     while True:
-        print('Pick a sampling interval (subject to battery capacity):\n  A. 0.2 second (~43 hours)\n  B. 1 second (>9 days; default)\n  C. 60 second (>500 days)')
+        print('Pick a sampling interval (subject to battery capacity):\n  A. 0.2 second (~43 hours)\n  B. 1 second (~9 days; default)\n  C. 60 second (~530 days)')
         r = input('Your choice: ')
         r = r.strip().lower()
         if r in ['a', 'b', 'c']:
