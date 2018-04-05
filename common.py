@@ -67,15 +67,21 @@ def stop_logging(ser, maxretry=10):
 
 
 def probably_empty(ser, maxretry=5):
-    ser.write(b'is_logging')
-    line = ser.readline().decode().strip()
-    try:
-        r = line.split(',')
-        if not ('0' == r[1]) and ('0' == r[2]):
-            logging.debug('probably_empty(): memory indices not clean')
-            return False
-    except IndexError:
-        raise InvalidResponseException('Invalid/no response from logger: ' + line)
+
+    for i in range(maxretry):
+        ser.write(b'is_logging')
+        line = ser.readline().decode().strip()
+        try:
+            r = line.split(',')
+            if 3 != len(r):
+                continue
+            if not ('0' == r[1]) and ('0' == r[2]):
+                logging.debug('probably_empty(): memory indices not clean')
+                return False
+            else:
+                break
+        except IndexError:
+            raise InvalidResponseException('Invalid/no response from logger: ' + line)
     
     for i in range(maxretry):
         ser.write(b'spi_flash_read_range0,ff\n')
@@ -83,40 +89,50 @@ def probably_empty(ser, maxretry=5):
         if 256+4 == len(r):
             if all([0xFF == rr for rr in r[:-4]]):
                 #ser.reset_input_buffer()
+                ser.readline()
                 return True
             else:
                 #ser.reset_input_buffer()
+                ser.readline()
                 return False
         else:
-            continue
-        
+            #ser.reset_input_buffer()
+            #ser.readline()
+            pass
+
+    ser.readline()
     return False
 
 
 def get_logging_config(ser, maxretry=10):
+    logging.debug('get_logger_config()')
     tags = ['logging_start_time', 'logging_stop_time', 'logging_interval_code', 'current_page_addr', 'byte_index_within_page']
     
     for i in range(maxretry):
         ser.write(b'get_logging_config')
         try:
-            line = ser.readline().decode().strip().split(',')
-            if len(line) >= 3:  # ... isn't there any simple self-descriptive format? or an ultra-intelligent parser?
-                return dict(zip(tags, [int(tmp) for tmp in line]))
+            r = ser.readline().decode().strip().split(',')
+            logging.debug(r)
+            if len(r) >= 3:  # ... isn't there any simple self-descriptive format? or an ultra-intelligent parser?
+                return dict(zip(tags, [int(tmp) for tmp in r]))
         except:
-            pass
+            logging.exception('')
         time.sleep(random.randint(0, 50)/100)
-    raise InvalidResponseException('Invalid/no response from logger: ' + line)
+    raise InvalidResponseException('Invalid/no response from logger')
 
 
 def read_vbatt(ser, maxretry=10):
+    logging.debug('read_vbatt()')
+    
     for i in range(maxretry):
         try:
             ser.write(b'read_sys_volt')
             r = ser.readline().decode().strip().split(',')
+            logging.debug(r)
             return round(float(r[1]), 2)
         except (UnicodeDecodeError, ValueError, IndexError):
-            pass
-    raise InvalidResponseException('Invalid/no response from logger: ' + r)
+            logging.exception('')
+    raise InvalidResponseException('Invalid/no response from logger')
 
 
 def get_logger_name(ser, maxretry=10):
@@ -124,15 +140,22 @@ def get_logger_name(ser, maxretry=10):
     #ser.reset_output_buffer()
     #ser.reset_input_buffer()
 
+    # there's no easy way to tell whether the name is not set, the logger is not responding, or those gibberish characters really is the name
+
     for i in range(maxretry):
         ser.write(b'get_logger_name')
         try:
             r = ser.readline().decode().strip()
+            logging.debug(r)
+            if len(r) <= 0:
+                time.sleep(random.randint(0, 200)/1000)
+                continue
             return r
         except UnicodeDecodeError:      # the name is probably not set
-            return ''
-        time.sleep(random.randint(0, 50)/100)
-    raise InvalidResponseException('Invalid/no response from logger: ' + r)
+            time.sleep(random.randint(0, 200)/1000)
+            continue
+    #raise InvalidResponseException('Invalid/no response from logger')
+    return ''
 
 
 def get_flash_id(ser, maxretry=10):
@@ -149,7 +172,8 @@ def get_flash_id(ser, maxretry=10):
             if len(r) <= 0:
                 continue
             if 16 == len(r) and r.startswith('E') and all([c in string.hexdigits for c in r]):
-                ser.reset_input_buffer()
+                #ser.reset_input_buffer()
+                ser.readline()
                 return r
         except UnicodeDecodeError:
             pass

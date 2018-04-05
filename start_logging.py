@@ -98,10 +98,9 @@ with Serial(PORT, 115200, timeout=1) as ser:
         print('Pick a sampling interval (subject to battery capacity):\n  A. 0.2 second (~43 hours)\n  B. 1 second (~9 days; default)\n  C. 60 second (~530 days)')
         r = input('Your choice: ')
         r = r.strip().lower()
-        if r in ['a', 'b', 'c']:
-            break
-        if '' == r:
-            r = 'b'
+        if r in ['a', 'b', 'c', '']:
+            if '' == r:
+                r = 'b'
             break
 
 
@@ -111,14 +110,14 @@ with Serial(PORT, 115200, timeout=1) as ser:
     logging_interval_code = int(ord(r) - ord('a'))
 
     cool = False
-    ser.write('set_logging_interval{}\n'.format(logging_interval_code).encode())
     for i in range(MAX_RETRY):
+        ser.write('set_logging_interval{}\n'.format(logging_interval_code).encode())
         c = get_logging_config(ser)
         if c['logging_interval_code'] == logging_interval_code:
             cool = True
             break
     if not cool:
-        print('Could not set sampling interval. Terminating.')
+        logging.error('Could not set sampling interval. Terminating.')
         sys.exit()
 
     if not probably_empty(ser):
@@ -129,6 +128,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
         if r in ['', 'yes', 'no']:
             break
     if r.strip().lower() in ['yes', '']:        # anything else is considered a no (don't wipe).
+        logging.debug('User wants to wipe memory.')
         ser.write(b'clear_memory')
         for i in range(440):
             try:
@@ -139,11 +139,12 @@ with Serial(PORT, 115200, timeout=1) as ser:
             except UnicodeDecodeError:
                 pass
 
-    #run = int(round(time.time()))
     # TODO: should store run number in logger so stop script can correlate start and stop configs
     # Basically a UUID for every logging session
+    print('Recording battery voltage...')
     vbatt = read_vbatt(ser)
 
+    print('Attempting to start logging...')
     cool = False
     for i in range(MAX_RETRY):
         ser.write(b'start_logging')
@@ -152,14 +153,15 @@ with Serial(PORT, 115200, timeout=1) as ser:
             cool = True
             break
         else:
-            logging.debug('... still logging...')
+            logging.debug('... still not logging...')
 
     if not cool:
         logging.error('Logger refuses to start. Terminating.')
         sys.exit()
 
-    # Record metadata
+    print('Logger is running.')
 
+    # Record metadata
     tmp = get_logging_config(ser)
     logging_start_time = tmp['logging_start_time']
     
