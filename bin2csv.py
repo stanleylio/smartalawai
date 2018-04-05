@@ -26,10 +26,10 @@ def find(path):
     elif len(FN) == 1:
         return FN[0]
     else:
-        for k,v in enumerate(FN):
+        for k,v in enumerate(FN, start=1):
             print('{}.\t{}'.format(k,v))
         r = input('Your choice: ').strip()
-        return FN[int(r)]
+        return FN[int(r) - 1]
     return d
 
 

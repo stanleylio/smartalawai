@@ -9,7 +9,7 @@ from serial import Serial
 from common import get_logger_name, get_flash_id, is_logging, stop_logging
 
 
-DEFAULT_PORT = 'COM18'
+DEFAULT_PORT = '/dev/ttyS0'
 PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
 if '' == PORT:
     PORT = DEFAULT_PORT
