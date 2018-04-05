@@ -25,32 +25,32 @@ class InvalidResponseException(Exception):
 
 
 def is_logging(ser, maxretry=10):
-    #ser.reset_output_buffer()
-    #ser.reset_input_buffer()
+    logging.debug('is_logging()')
+    ser.reset_output_buffer()
+    ser.reset_input_buffer()
 
     for i in range(maxretry):
         try:
             if i > 0:
                 logging.debug('is_logging(): retrying...')
-            ser.write(b'\n')
             ser.write(b'is_logging')
             #ser.reset_output_buffer()
-            r = ser.readline().decode().strip()
-            logging.debug('is_logging(): ' + r)
-            r = r.split(',')
+            r = ser.readline()
+            logging.debug(r)
+            r = r.decode().strip().split(',')
             if len(r) == 3 and r[0] in ['0', '1']:
                 return '1' == r[0]
-        except (UnicodeDecodeError, IndexError):
-            pass
+        except (UnicodeDecodeError, IndexError, TypeError, ValueError):
+            logging.exception('')
         time.sleep(random.randint(0, 90)/100)
 
-    raise InvalidResponseException('Invalid/no response from logger: ' + r)
+    raise InvalidResponseException('Invalid/no response from logger')
 
 
 def stop_logging(ser, maxretry=10):
     logging.debug('stop_logging()')
-    #ser.reset_output_buffer()
-    #ser.reset_input_buffer()
+    ser.reset_output_buffer()
+    ser.reset_input_buffer()
 
     stopped = False
     for i in range(maxretry):
@@ -67,6 +67,9 @@ def stop_logging(ser, maxretry=10):
 
 
 def probably_empty(ser, maxretry=5):
+    logging.debug('probably_empty()')
+    ser.reset_output_buffer()
+    ser.reset_input_buffer()
 
     for i in range(maxretry):
         ser.write(b'is_logging')
@@ -137,17 +140,23 @@ def read_vbatt(ser, maxretry=10):
 
 def get_logger_name(ser, maxretry=10):
     logging.debug('get_logger_name()')
-    #ser.reset_output_buffer()
-    #ser.reset_input_buffer()
+    ser.reset_output_buffer()
+    ser.reset_input_buffer()
 
     # there's no easy way to tell whether the name is not set, the logger is not responding, or those gibberish characters really is the name
 
     for i in range(maxretry):
         ser.write(b'get_logger_name')
         try:
-            r = ser.readline().decode().strip()
+            r = ser.readline()
+            if all(['\xff' == c for c in r[:-1]]):
+                # name is not set
+                logging.debug('name has not been set')
+                return ''
+            r = r.decode().strip()
             logging.debug(r)
             if len(r) <= 0:
+                logging.debug('No response...')
                 time.sleep(random.randint(0, 200)/1000)
                 continue
             return r
@@ -160,13 +169,12 @@ def get_logger_name(ser, maxretry=10):
 
 def get_flash_id(ser, maxretry=10):
     logging.debug('get_flash_id()')
-    #ser.reset_output_buffer()
-    #ser.reset_input_buffer()
+    ser.reset_output_buffer()
+    ser.reset_input_buffer()
 
     for i in range(maxretry):
         ser.write(b'spi_flash_get_unique_id')
         try:
-            time.sleep(0.1)
             r = ser.readline().decode().strip()
             logging.debug(r)
             if len(r) <= 0:
@@ -210,6 +218,7 @@ if '__main__' == __name__:
         PORT = DEFAULT_PORT
 
     with Serial(PORT, 115200, timeout=1) as ser:
+        print(get_logger_name(ser))
         print(is_logging(ser))
         print(read_vbatt(ser))
         print(probably_empty(ser))
