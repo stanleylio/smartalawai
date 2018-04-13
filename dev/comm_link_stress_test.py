@@ -16,7 +16,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
     # 773~782 (773, can recover)
     # 782 takes a while to recover
 
-    ser.write(('gibberish'*782).encode())
+    ser.write(('gibberish'*1000).encode())
 
     #while True:
     #    ser.write(b'red_led_off red_led_on')

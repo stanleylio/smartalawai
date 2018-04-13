@@ -14,7 +14,8 @@
 # University of Hawaii
 # Copyright 2018 Stanley H.I. Lio
 # hlio@hawaii.edu
-import logging, random, time, string
+import logging, random, time, string, calendar
+from datetime import datetime
 
 
 SAMPLE_INTERVAL_CODE_MAP = {0:1/5, 1:1, 2:60}
@@ -22,6 +23,17 @@ SAMPLE_INTERVAL_CODE_MAP = {0:1/5, 1:1, 2:60}
 
 class InvalidResponseException(Exception):
     pass
+
+
+def dt2ts(dt=None):
+    if dt is None:
+        dt = datetime.utcnow()
+    return calendar.timegm(dt.timetuple()) + (dt.microsecond)*(1e-6)
+
+def ts2dt(ts=None):
+    if ts is None:
+        ts = dt2ts()
+    return datetime.utcfromtimestamp(ts)
 
 
 def is_logging(ser, maxretry=10):
