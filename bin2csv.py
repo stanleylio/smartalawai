@@ -41,14 +41,9 @@ def find(pattern, dironly=False, fileonly=False):
             for k,v in enumerate(FN, start=1):
                 print('{}.\t{}'.format(k,v))
                 
-            r = input('Your choice: ').strip()
+            r = input('Your choice: ').strip().upper()
 
-            try:
-                int(r)
-            except ValueError:
-                pass
-
-            if r.strip() not in [str(v) for v in range(1, len(FN) + 1)]:
+            if r not in [str(v) for v in range(1, len(FN) + 1)]:
                 #r = input('Not an option. Give me the ID instead:')
                 print('Not an option. I\'ll take that as part of the ID.')
                 tmp = list(filter(lambda x: r in x, FN))
