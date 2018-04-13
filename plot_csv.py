@@ -151,6 +151,8 @@ plt.plot_date(dt, w, 'k.:', label='w', alpha=0.2)
 plt.legend(loc=2)
 plt.grid(True)
 
+plt.xlabel('UTC Time')
+
 plt.tight_layout()
 plt.gcf().autofmt_xdate()
 ax1.xaxis.set_major_formatter(DateFormatter('%b %d %H:%M:%S'))
@@ -158,3 +160,5 @@ ax1.xaxis.set_major_formatter(DateFormatter('%b %d %H:%M:%S'))
 print('Saving plot to disk...')
 plt.savefig(fn.split('.')[0] + '.png', dpi=300)
 plt.show()
+
+print('Done.')
