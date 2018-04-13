@@ -37,16 +37,29 @@ def find(pattern, dironly=False, fileonly=False):
         logging.debug('Only one file/folder fits the criteria.')
         return FN[0]
     else:
-        for k,v in enumerate(FN, start=1):
-            print('{}.\t{}'.format(k,v))
-            
         while True:
+            for k,v in enumerate(FN, start=1):
+                print('{}.\t{}'.format(k,v))
+                
             r = input('Your choice: ').strip()
+
             try:
-                if int(r) >= 1 and int(r) <= len(FN):
-                    return FN[int(r) - 1]
+                int(r)
             except ValueError:
                 pass
+
+            if r.strip() not in [str(v) for v in range(1, len(FN) + 1)]:
+                #r = input('Not an option. Give me the ID instead:')
+                print('Not an option. I\'ll take that as part of the ID.')
+                tmp = list(filter(lambda x: r in x, FN))
+                if len(tmp):
+                    FN = tmp
+                    if 1 == len(FN):
+                        return FN[0]
+                else:
+                    print('That\'s not in any of the remaining IDs.')
+            else:
+                return FN[int(r) - 1]
 
 
 if '__main__' == __name__:
