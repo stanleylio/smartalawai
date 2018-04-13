@@ -8,36 +8,61 @@
 # University of Hawaii
 # Copyright 2018 Stanley H.I. Lio
 # hlio@hawaii.edu
-import struct, math, sys, csv, json
+import struct, math, sys, csv, json, logging
 from glob import glob
-from os.path import join, exists, basename
+from os.path import join, exists, basename, isdir, isfile
 import numpy as np
 from scipy.stats import describe
-from common import SAMPLE_INTERVAL_CODE_MAP
+from common import SAMPLE_INTERVAL_CODE_MAP, ts2dt, dt2ts
+
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 SAMPLE_SIZE = 20    # size of one sample in byte
 PAGE_SIZE = 256
 
-def find(path):
-    FN = sorted(glob(path))
+
+def find(pattern, dironly=False, fileonly=False):
+    FN = sorted(glob(pattern))
+    if dironly:
+        FN = list(filter(lambda x: isdir(x), FN))
+    if fileonly:
+        FN = list(filter(lambda x: isfile(x), FN))
+
     if len(FN) == 0:
+        logging.debug('No file/folder fits the criteria.')
         return None
     elif len(FN) == 1:
+        logging.debug('Only one file/folder fits the criteria.')
         return FN[0]
     else:
         for k,v in enumerate(FN, start=1):
             print('{}.\t{}'.format(k,v))
-        r = input('Your choice: ').strip()
-        return FN[int(r) - 1]
-    return d
+            
+        while True:
+            r = input('Your choice: ').strip()
+            try:
+                if int(r) >= 1 and int(r) <= len(FN):
+                    return FN[int(r) - 1]
+            except ValueError:
+                pass
 
 
 if '__main__' == __name__:
 
-    d = find('data/*')
-    binfilename = find(join(d, '*.bin'))
-
+    while True:
+        d = find('data/*', dironly=True)
+        if d is None:
+            print('No data file found. Terminating.')
+            sys.exit()
+        binfilename = find(join(d, '*.bin'), fileonly=True)
+        if binfilename is None:
+            print('No binary file found in {}. Pick another or Ctrl + C to terminate.'.format(d))
+        else:
+            logging.debug(binfilename)
+            break
+    
     # Names of the binary data file, the configuration file, and the output file
     #binfilename = 'data/{}/{}_{}.bin'.format(flash_id, flash_id, max(FNT))
     #configfilename = 'data/{}/{}_{}.config'.format(flash_id, flash_id, max(FNT))
@@ -86,6 +111,19 @@ if '__main__' == __name__:
     print('Reading config {}'.format(configfilename))
     config = json.loads(open(configfilename).read())
     logging_start_time = config['logging_start_time']
+    logging_stop_time = config.get('logging_stop_time', None)
+
+    if logging_stop_time is not None and logging_stop_time > logging_start_time:
+        print('{} samples from {} to {} spanning {}'.format(len(D),
+                                                            ts2dt(logging_start_time),
+                                                            ts2dt(logging_stop_time),
+                                                            ts2dt(logging_stop_time) - ts2dt(logging_start_time)))
+        print('Effective sample rate {:.3f} sample/second or an average interval of {:.3f} second'.format(
+            len(D)/(logging_stop_time - logging_start_time),
+            (logging_stop_time - logging_start_time)/len(D)))
+    else:
+        logging.warning('No record of logging_stop_time. Are the batteries good? Did someone remove power without stopping logging first?')
+
     logging_interval_code = config['logging_interval_code']
 
 
