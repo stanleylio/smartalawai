@@ -10,6 +10,7 @@ import time, logging, sys, json
 from os import makedirs
 from os.path import join, exists
 from serial import Serial
+from serial.serialutil import SerialException
 from crc_check import check_response
 from common import is_logging, stop_logging, get_logging_config, read_vbatt, get_logger_name, get_flash_id, InvalidResponseException, SAMPLE_INTERVAL_CODE_MAP
 
@@ -73,9 +74,17 @@ def split_range(begin, end, pkt_size):
 if '__main__' == __name__:
 
     DEFAULT_PORT = '/dev/ttyS0'
-    PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
-    if '' == PORT:
-        PORT = DEFAULT_PORT
+    while True:
+        PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
+        if '' == PORT:
+            PORT = DEFAULT_PORT
+        try:
+            Serial(PORT, 115200, timeout=1)
+            break
+        except SerialException:
+            print('Can\'t open port "{}".'.format(PORT))
+            DEFAULT_PORT = PORT
+            
 
     with Serial(PORT, 115200, timeout=2) as ser:
 

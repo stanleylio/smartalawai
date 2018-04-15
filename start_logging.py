@@ -1,7 +1,7 @@
 # Start logging.
 #
 # This will write to memory (whether it's clean or not).
-# It also sets the RTC before logging.
+# It sets the RTC before logging.
 #
 # TODO:
 #   get calibration eeprom
@@ -19,6 +19,7 @@ import time, json, sys, logging
 from os import makedirs
 from os.path import join, exists
 from serial import Serial
+from serial.serialutil import SerialException
 from set_rtc import set_rtc_aligned, read_rtc, ts2dt
 from common import is_logging, stop_logging, probably_empty, get_logging_config, read_vbatt, get_flash_id, get_logger_name, InvalidResponseException
 
@@ -27,9 +28,16 @@ logging.basicConfig(level=logging.WARNING)
 
 
 DEFAULT_PORT = '/dev/ttyS0'
-PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
-if '' == PORT:
-    PORT = DEFAULT_PORT
+while True:
+    PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
+    if '' == PORT:
+        PORT = DEFAULT_PORT
+    try:
+        Serial(PORT, 115200, timeout=1)
+        break
+    except SerialException:
+        print('Can\'t open port "{}".'.format(PORT))
+        DEFAULT_PORT = PORT
 
 MAX_RETRY = 10
 
@@ -95,7 +103,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
 
     # Set sample interval
     while True:
-        print('Pick a sampling interval (subject to battery capacity):\n  A. 0.2 second (~43 hours)\n  B. 1 second (~9 days; default)\n  C. 60 second (~530 days)')
+        print('Pick a sampling interval (subject to battery capacity constraint):\n  A. 0.2 second (~43 hours)\n  B. 1 second (~9 days; default)\n  C. 60 second (~530 days)')
         r = input('Your choice: ')
         r = r.strip().lower()
         if r in ['a', 'b', 'c', '']:
@@ -130,18 +138,29 @@ with Serial(PORT, 115200, timeout=1) as ser:
     if r.strip().lower() in ['yes', '']:        # anything else is considered a no (don't wipe).
         logging.debug('User wants to wipe memory.')
         ser.write(b'clear_memory')
-        for i in range(440):
+        cool = 5
+        while cool > 0:
             try:
                 line = ser.read(100)
+                if b'.' != line:
+                    logging.debug('Not cool.')
+                    cool -= 1
+                else:
+                    cool = 5
+
                 print(line.decode(), end='', flush=True)
                 if 'done.' in line.decode():
                     break
             except UnicodeDecodeError:
                 pass
 
+        if cool <= 0:
+            print('Logger is not responding to clear_memory. Terminating.')
+            sys.exit()
+        
     # TODO: should store run number in logger so stop script can correlate start and stop configs
     # Basically a UUID for every logging session
-    print('Recording battery voltage...')
+    print('Reading battery voltage...')
     vbatt = read_vbatt(ser)
 
     print('Attempting to start logging...')
