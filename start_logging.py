@@ -99,6 +99,13 @@ with Serial(PORT, 115200, timeout=1) as ser:
         logging.error('Cannot set logger clock. Terminating.')
         sys.exit()
     print(' {}'.format(ts2dt(device_time)))
+    '''print()
+    while True:
+        try:
+            print('Current logger time: {}. Press Ctrl+C to continue...'.format(ts2dt(read_rtc(ser))))
+            time.sleep(1)
+        except KeyboardInterrupt:
+            break'''
 
 
     # Set sample interval
@@ -131,22 +138,28 @@ with Serial(PORT, 115200, timeout=1) as ser:
     if not probably_empty(ser):
         print('(Memory is not clean.)')
 
+    time.sleep(1)
+    ser.flushInput()
+
     while True:
         r = input('Wipe memory? (yes/no; default=yes)')
         if r in ['', 'yes', 'no']:
             break
-    if r.strip().lower() in ['yes', '']:        # anything else is considered a no (don't wipe).
+    if r.strip().lower() in ['yes', '']:        # anything else is considered a NO (don't wipe).
         logging.debug('User wants to wipe memory.')
         ser.write(b'clear_memory')
-        cool = 5
+        THRESHOLD = 10
+        cool = THRESHOLD
         while cool > 0:
             try:
                 line = ser.read(100)
+                logging.debug(line)
                 if b'.' != line:
-                    logging.debug('Not cool.')
+                    logging.debug('Not cool')
                     cool -= 1
                 else:
-                    cool = 5
+                    logging.debug('cool')
+                    cool = THRESHOLD
 
                 print(line.decode(), end='', flush=True)
                 if 'done.' in line.decode():
