@@ -16,13 +16,6 @@ from scipy.stats import describe
 from common import SAMPLE_INTERVAL_CODE_MAP, ts2dt, dt2ts
 
 
-logging.basicConfig(level=logging.DEBUG)
-
-
-SAMPLE_SIZE = 20    # size of one sample in byte
-PAGE_SIZE = 256
-
-
 def find(pattern, dironly=False, fileonly=False):
     FN = sorted(glob(pattern))
     if dironly:
@@ -58,6 +51,11 @@ def find(pattern, dironly=False, fileonly=False):
 
 
 if '__main__' == __name__:
+
+    logging.basicConfig(level=logging.WARNING)
+
+    SAMPLE_SIZE = 20    # size of one sample in byte
+    PAGE_SIZE = 256
 
     while True:
         d = find('data/*', dironly=True)
