@@ -34,7 +34,7 @@ MAX_RETRY = 10
 STOP_ON_EMPTY = True
 
 
-def read_range_core(begin, end):
+def read_range_core(ser, begin, end):
     assert end >= begin
 
     cmd = 'spi_flash_read_range{:x},{:x}\n'.format(begin, end)
@@ -156,8 +156,8 @@ if '__main__' == __name__:
         starttime = time.time()
         with open(fn, 'wb') as fout:
             for begin, end in split_range(BEGIN, END, STRIDE):
-                print('Reading {:X} to {:X} ({:.2f}%)'.format(begin, end, end/SPI_FLASH_SIZE_BYTE*100))
-                line = read_range_core(begin, end)
+                print('Reading {:X} to {:X} ({:.2f}% of total capacity)'.format(begin, end, end/SPI_FLASH_SIZE_BYTE*100))
+                line = read_range_core(ser, begin, end)
                 if len(line) <= 0:
                     raise RuntimeError('wut?')
                 if STOP_ON_EMPTY and all([0xFF == b for b in line]):
