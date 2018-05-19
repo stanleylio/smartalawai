@@ -9,6 +9,7 @@
 # Copyright 2018 Stanley H.I. Lio
 # hlio@hawaii.edu
 import struct, math, sys, csv, json, logging
+from datetime import datetime
 from glob import glob
 from os.path import join, exists, basename, isdir, isfile
 import numpy as np
@@ -137,16 +138,19 @@ if '__main__' == __name__:
     ts = np.linspace(0, len(D) - 1, num=len(D))
     ts *= SAMPLE_INTERVAL_CODE_MAP[logging_interval_code]
     ts += logging_start_time
+    dt = [ts2dt(tmp) for tmp in ts]
     #print(ts[0:10])
     #sys.exit()
 
     DT = list(zip(*D))
     DT.insert(0, ts)
+    DT.insert(0, dt)
     D = zip(*DT)
 
     print('Writing to {}...'.format(outputfilename))
     with open(outputfilename, 'w', newline='') as fout:
         writer = csv.writer(fout, delimiter=',')
+        writer.writerow(['UTC_datetime', 'posix_timestamp', 'T_DegC', 'P_kPa', 'ambient_light_hdr', 'white_light_hdr', 'red', 'green', 'blue', 'white'])
         for d in D:
             writer.writerow([str(x) for x in d])
 

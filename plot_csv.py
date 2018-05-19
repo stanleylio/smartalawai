@@ -26,7 +26,22 @@ def get_logger_name(fn):
 
 
 def read_and_parse_data(fn):
-    D = [[float(x) for x in line] for line in csv.reader(open(fn, newline=''))]
+    
+    # Cory wants a human time column
+    line = open(fn).readline().split(',')
+    has_human_time = False
+    if 10 == len(line):     # has human time
+        has_human_time = True
+
+    D = []
+    for line in open(fn):
+        try:        # ignore parse error, effectively skipping header, if any
+            if has_human_time:
+                D.append([float(x) for x in line.split(',')[1:]])   # ignore the first column
+            else:
+                D.append([float(x) for x in line.split(',')])
+        except ValueError:
+            pass
     return zip(*D)
 
 

@@ -1,5 +1,6 @@
 #http://effbot.org/tkinterbook/tkinter-classes.htm
 from tkinter import *
+import logging
 
 
 class App:
@@ -16,6 +17,9 @@ class App:
 
         row_led = Frame(master)
         row_led.pack()
+
+        row_config = Frame(master)
+        row_config.pack()
 
         row_logging = Frame(master)
         row_logging.pack()
@@ -63,12 +67,15 @@ class App:
 
         self.v = IntVar()
         self.v.set(2)
-        self.radio1 = Radiobutton(row_logging, text='0.2 second', variable=self.v, value=1)
+        self.radio1 = Radiobutton(row_config, text='0.2 second', variable=self.v, value=1)
         self.radio1.pack(anchor=W)
-        self.radio2 = Radiobutton(row_logging, text='1 second', variable=self.v, value=2)
+        self.radio2 = Radiobutton(row_config, text='1 second', variable=self.v, value=2)
         self.radio2.pack(anchor=W)
-        self.radio3 = Radiobutton(row_logging, text='60 second', variable=self.v, value=3)
+        self.radio3 = Radiobutton(row_config, text='60 second', variable=self.v, value=3)
         self.radio3.pack(anchor=W)
+
+        self.set_rtc = Button(row_config, text='SET SAMPLING INTERVAL', command=self.set_logging_interval)
+        self.set_rtc.pack(side=LEFT)
         
         self.set_rtc = Button(row_logging, text='SET CLOCK', command=self.set_rtc)
         self.set_rtc.pack(side=LEFT)
@@ -86,57 +93,64 @@ class App:
         #self.text.pack(side=LEFT)
 
     def get_name(self):
+        logging.debug('get_name')
         self.label1.set('一人前')
 
     def get_id(self):
-        print('awake')
+        logging.debug('get_id')
+        self.label1.set('一人前')
     
     def read_memory(self):
-        print('avast')
+        logging.debug('read_memory')
 
     def clear_memory(self):
-        print('hold')
+        logging.debug('clear_memory')
 
     def start_logging(self):
-        print('tight')
+        logging.debug('start_logging')
 
     def stop_logging(self):
-        print('your')
+        logging.debug('stop_logging')
+
+    def set_logging_interval(self):
+        print(self.v.get())
 
     def get_vbatt(self):
-        print('bun')
+        logging.debug('get_vbatt')
 
     def read_sensors(self):
-        print('for')
+        logging.debug('read_sensors')
 
     def set_rtc(self):
-        print('bun')
+        logging.debug('set_rtc')
 
     def red_led_on(self):
-        print('you')
+        logging.debug('red_led_on')
 
     def red_led_off(self):
-        print('do')
+        logging.debug('red_led_off')
 
     def green_led_on(self):
-        print('hold')
+        logging.debug('green_led_on')
 
     def green_led_off(self):
-        print('dear')
+        logging.debug('green_led_off')
 
     def blue_led_on(self):
-        print('wut')
+        logging.debug('blue_led_on')
 
     def blue_led_off(self):
-        print('wut')
+        logging.debug('blue_led_off')
 
+
+logging.basicConfig(level=logging.DEBUG)
 
 root = Tk()
 
 app = App(root)
 
 root.mainloop()
-root.destroy()
+#root.destroy()
 
 
 
