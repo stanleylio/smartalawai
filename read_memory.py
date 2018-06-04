@@ -107,8 +107,8 @@ if '__main__' == __name__:
                 sys.exit()
 
         try:
-            name = get_logger_name(ser)
-            print('Name: {}'.format(name))
+            logger_name = get_logger_name(ser)
+            print('Name: {}'.format(logger_name))
             flash_id = get_flash_id(ser)
             print('ID: {}'.format(flash_id))
         except InvalidResponseException:
@@ -131,6 +131,8 @@ if '__main__' == __name__:
             config = json.loads(open(configfilename).read())
         else:
             logging.warning('No existing config file.')
+        config['logger_name'] = logger_name
+        config['flash_id'] = flash_id
         config['logging_start_time'] = metadata['logging_start_time']
         config['logging_stop_time'] = metadata['logging_stop_time']
         config['logging_interval_code'] = metadata['logging_interval_code']
