@@ -48,7 +48,16 @@ def read_rtc(ser):
 
 if '__main__' == __name__:
 
-    with Serial(input('PORT='), 115200, timeout=1) as ser:
+    # find the serial port to use from user, from history, or make a guess
+    # if on Windows, print the list of COM ports
+    from common import serial_port_best_guess, save_default_port
+    DEFAULT_PORT = serial_port_best_guess(prompt=True)
+    PORT = input('PORT=? (default={}):'.format(DEFAULT_PORT)).strip()
+    # empty input, use default
+    if '' == PORT:
+        PORT = DEFAULT_PORT
+
+    with Serial(PORT, 115200, timeout=1) as ser:
         # the simple way +/- 1s
         #currenttime = round(time.time())
         #ser.write('write_rtc{}\n'.format(currenttime).encode())

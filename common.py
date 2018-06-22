@@ -156,6 +156,7 @@ def get_logger_name(ser, maxretry=10):
     ser.reset_input_buffer()
 
     # there's no easy way to tell whether the name is not set, the logger is not responding, or those gibberish characters really is the name
+    # without proper framing and checksum in storage and in comm, any check you do here is just heuristics/guess/hack
 
     for i in range(maxretry):
         ser.write(b'get_logger_name')

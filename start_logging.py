@@ -27,20 +27,16 @@ from common import is_logging, stop_logging, probably_empty, get_logging_config,
 logging.basicConfig(level=logging.WARNING)
 
 
-DEFAULT_PORT = '/dev/ttyS0'
-while True:
-    PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
-    if '' == PORT:
-        PORT = DEFAULT_PORT
-    try:
-        Serial(PORT, 115200, timeout=1)
-        break
-    except SerialException:
-        print('Can\'t open port "{}".'.format(PORT))
-        DEFAULT_PORT = PORT
-
 MAX_RETRY = 10
 
+# find the serial port to use from user, from history, or make a guess
+# if on Windows, print the list of COM ports
+from common import serial_port_best_guess, save_default_port
+DEFAULT_PORT = serial_port_best_guess(prompt=True)
+PORT = input('PORT=? (default={}):'.format(DEFAULT_PORT)).strip()
+# empty input, use default
+if '' == PORT:
+    PORT = DEFAULT_PORT
 
 with Serial(PORT, 115200, timeout=1) as ser:
 
