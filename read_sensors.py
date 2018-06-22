@@ -4,7 +4,7 @@
 # University of Hawaii
 # Copyright 2018 Stanley H.I. Lio
 # hlio@hawaii.edu
-import time, functools, logging, calendar
+import time, functools, logging, calendar, math
 from serial import Serial
 from itertools import cycle
 from datetime import datetime
@@ -35,13 +35,20 @@ def dt2ts(dt=None):
     return calendar.timegm(dt.timetuple()) + (dt.microsecond)*(1e-6)
 
 
-DEFAULT_PORT = '/dev/ttyS0'
-PORT = input('PORT=? (default={})'.format(DEFAULT_PORT))
+# find the serial port to use from user, from history, or make a guess
+# if on Windows, print the list of COM ports
+from common import serial_port_best_guess, save_default_port
+DEFAULT_PORT = serial_port_best_guess()
+PORT = input('PORT=? (default={}):'.format(DEFAULT_PORT)).strip()
+
+# empty input, use default
 if '' == PORT:
     PORT = DEFAULT_PORT
 
 with Serial(PORT, 115200, timeout=1) as ser,\
      open(fn, 'a', 1) as fout:
+
+    save_default_port(PORT)
 
     q = functools.partial(q, ser)
 
@@ -53,41 +60,43 @@ with Serial(PORT, 115200, timeout=1) as ser,\
 
         try:
             line = q('read_temperature')
-            t = float(line.replace('Deg.C',''))
+            t = float(line.replace('Deg.C', ''))
         except (IndexError, ValueError):
-            logging.exception('comm error (temperature)')
+            print('No/invalid response (temperature)')
 
         try:
             line = q('read_pressure')
-            p = float(line.replace('kPa',''))
+            p = float(line.replace('kPa', ''))
         except (IndexError, ValueError):
-            logging.exception('comm error (pressure)')
+            print('No/invalid response (pressure)')
 
         try:
             line = q('read_ambient_lx')
-            lux = line.split(',')[0].replace('lx','')
+            lux = line.split(',')[0].replace('lx', '')
             raw = line.split(',')[1]
             als_lux = float(lux)
             als_raw = int(raw)
         except (IndexError, ValueError):
-            logging.exception('comm error (ambient lx)')
+            print('No/invalid response (ambient lx)')
 
         try:
             line = q('read_white_lx')
-            lux = line.split(',')[0].replace('lx','')
+            lux = line.split(',')[0].replace('lx', '')
             raw = line.split(',')[1]
             als_white_lux = float(lux)
             als_white_raw = int(raw)
         except (IndexError, ValueError):
-            logging.exception('comm error *white lx)')
+            print('No/invalid response (white lx)')
 
         try:
             line = q('read_rgbw')
             line = line.strip().split(',')
             r, g, b, w = [int(float(v)) for v in line]
         except (IndexError, ValueError):
-            logging.warning('comm error (rgbw)')
-        
+            print('No/invalid response (rgbw)')
+
+        if all(math.isnan(v) for v in [t, p, als_raw, als_white_raw, r, g, b, w]):
+            continue
         #q(next(cmds), wait=False)
         #print(d)
 
@@ -99,6 +108,9 @@ with Serial(PORT, 115200, timeout=1) as ser,\
         fout.write(','.join([str(v) for v in tmp]) + '\n')
         #print(D)
 
+        if len(D) < 1:
+            continue
+        
         DT, T, P, ALS_RAW, ALS_WHITE_RAW, R, G, B, W = list(zip(*D))
         
         plt.clf()

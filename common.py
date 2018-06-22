@@ -216,11 +216,78 @@ def get_metadata(ser, maxretry=10):
     config['logging_interval_code'] = metadata['logging_interval_code']
 
     return config
-    
+
+def list_serial_port():
+    """ doesn't work on the pi. it doesn't show /dev/ttyS0"""
+    import serial.tools.list_ports
+    return sorted(serial.tools.list_ports.comports(), key=lambda c: int(c.device.replace('COM', '')))
+
+def serial_port_best_guess(prompt=False):
+    import platform, glob, json
+    import serial.tools.list_ports
+    from os.path import exists, join, dirname
+
+    P = platform.system()
+
+    # see if there's any hint
+    try:
+        fn = join(dirname(__file__), 'saw.tmp')
+        if exists(fn):
+            port = json.load(open(fn))['serialport']
+            if 'Windows' in P:
+                if port.lower() in [c.device.lower() for c in serial.tools.list_ports.comports()]:
+                    return port
+            else:
+                if exists(port):
+                    return port
+    except Exception as e:
+        logging.debug(e)
+
+    # for whatever reason, no hint on which serial port to use
+    if 'Windows' in P:
+        L = list_serial_port()
+        if prompt:
+            for c in L:
+                print(c.description)
+        return L[0].device
+    else:
+        # cu.usbserial########
+        # tty.usbserial########
+        # tty.usbmodem########
+
+        if exists('/dev'):
+            L = glob.glob('/dev/ttyUSB*')   # mac, or pi with adapter
+            if len(L):
+                return L[0]
+            
+            L = glob.glob('/dev/*serial*')  # still mac
+            if '.' in L:
+                return L[0]
+
+            L = glob.glob('/dev/*modem*')   # mac again
+            if '.' in L:
+                return L[0]
+
+    return '/dev/ttyS0'
+
+def save_default_port(port):
+    import json
+    from os.path import exists, join, dirname
+    fn = join(dirname(__file__), 'saw.tmp')
+    if exists(fn):
+        config = json.load(open(fn))
+    else:
+        config = {}
+    config['serialport'] = port
+    json.dump(config, open(fn, 'w'))
+
 
 if '__main__' == __name__:
+    
     import logging
     from serial import Serial
+
+    print(serial_port_best_guess())
 
     logging.basicConfig(level=logging.DEBUG)
 
