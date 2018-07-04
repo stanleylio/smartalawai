@@ -262,8 +262,7 @@ def serial_port_best_guess(prompt=False):
                 return L[0]
             
             L = glob.glob('/dev/*serial*')  # still mac
-            if '.' in L:
-                return L[0]
+            return L[0]
 
             L = glob.glob('/dev/*modem*')   # mac again
             if '.' in L:
