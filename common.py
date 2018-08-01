@@ -257,14 +257,14 @@ def serial_port_best_guess(prompt=False):
         # tty.usbmodem########
 
         if exists('/dev'):
-            L = glob.glob('/dev/ttyUSB*')   # mac, or pi with adapter
+            L = glob.glob('/dev/ttyUSB*')       # mac, or pi with adapter
             if len(L):
                 return L[0]
-            
-            L = glob.glob('/dev/*serial*')  # still mac
+
+            L = glob.glob('/dev/*usbserial*')   # still mac
             return L[0]
 
-            L = glob.glob('/dev/*modem*')   # mac again
+            L = glob.glob('/dev/*usbmodem*')       # mac again
             if '.' in L:
                 return L[0]
 

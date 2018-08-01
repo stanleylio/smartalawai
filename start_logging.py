@@ -49,6 +49,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
         logging.error('Cannot find logger. Terminating.')
         sys.exit()
 
+    save_default_port(PORT)
 
     # Prepare config file
     makedirs(join('data', flash_id), exist_ok=True)

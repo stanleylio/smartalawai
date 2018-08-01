@@ -102,6 +102,8 @@ if '__main__' == __name__:
                 print('No change made. Terminating.')
                 sys.exit()
 
+        save_default_port(PORT)
+
         try:
             logger_name = get_logger_name(ser)
             print('Name: {}'.format(logger_name))
