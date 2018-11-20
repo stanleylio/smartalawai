@@ -17,7 +17,7 @@ from scipy.stats import describe
 from common import SAMPLE_INTERVAL_CODE_MAP, ts2dt, dt2ts
 
 
-def find(pattern, dironly=False, fileonly=False):
+def find(pattern, *_, dironly=False, fileonly=False, default=None):
     FN = sorted(glob(pattern))
     if dironly:
         FN = list(filter(lambda x: isdir(x), FN))
@@ -34,8 +34,16 @@ def find(pattern, dironly=False, fileonly=False):
         while True:
             for k,v in enumerate(FN, start=1):
                 print('{}.\t{}'.format(k,v))
-                
-            r = input('Your choice: ').strip().upper()
+
+            if default:
+                r = input('Your choice (default=last): ').strip().upper()
+            else:
+                r = input('Your choice: ').strip().upper()
+
+            if 'last' == default:
+                if len(r.strip()) <= 0 and len(FN) > 0:
+                    return FN[-1]
+                #yeah that only makes sense for .bin. Not for logger selection.
 
             if r not in [str(v) for v in range(1, len(FN) + 1)]:
                 #r = input('Not an option. Give me the ID instead:')
@@ -63,7 +71,7 @@ if '__main__' == __name__:
         if d is None:
             print('No data file found. Terminating.')
             sys.exit()
-        binfilename = find(join(d, '*.bin'), fileonly=True)
+        binfilename = find(join(d, '*.bin'), fileonly=True, default='last')
         if binfilename is None:
             print('No binary file found in {}. Pick another or Ctrl + C to terminate.'.format(d))
         else:

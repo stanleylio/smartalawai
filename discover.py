@@ -49,9 +49,10 @@ with Serial(PORT, 115200, timeout=1) as ser:
                 r = 'No existing data.'
 
             print('NAME="{}" ID={} RTC={}, BATTERY={:.2f}V. {}. {}'.format(name, flash_id, ts2dt(rtc), vbatt, running, r))
-
-            time.sleep(1)
-            
         except (InvalidResponseException, UnicodeDecodeError, ValueError, IndexError, TypeError) as e:
-            logging.debug('')
-            time.sleep(1)
+            #logging.exception('')
+            pass
+        except KeyboardInterrupt:
+            break
+
+    time.sleep(1)

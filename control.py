@@ -1,6 +1,14 @@
 #http://effbot.org/tkinterbook/tkinter-classes.htm
 from tkinter import *
-import logging
+import logging, time
+from serial import Serial
+from common import get_logger_name, get_flash_id, read_vbatt, serial_port_best_guess
+from set_rtc import set_rtc, read_rtc
+
+
+#PORT = serial_port_best_guess(prompt=True)
+PORT = 'COM15'
+print(PORT)
 
 
 class App:
@@ -74,11 +82,11 @@ class App:
         self.radio3 = Radiobutton(row_config, text='60 second', variable=self.v, value=3)
         self.radio3.pack(anchor=W)
 
-        self.set_rtc = Button(row_config, text='SET SAMPLING INTERVAL', command=self.set_logging_interval)
-        self.set_rtc.pack(side=LEFT)
+        self.set_logging_interval = Button(row_config, text='SET SAMPLING INTERVAL', command=self.set_logging_interval)
+        self.set_logging_interval.pack(side=LEFT)
         
-        self.set_rtc = Button(row_logging, text='SET CLOCK', command=self.set_rtc)
-        self.set_rtc.pack(side=LEFT)
+        self.set_clock = Button(row_logging, text='SET CLOCK', command=self.set_clock)
+        self.set_clock.pack(side=LEFT)
 
         self.start_logging = Button(row_logging, text='START Logging', command=self.start_logging)
         self.start_logging.pack(side=LEFT)
@@ -94,11 +102,13 @@ class App:
 
     def get_name(self):
         logging.debug('get_name')
-        self.label1.set('一人前')
+        with Serial(PORT, 115200, timeout=1) as ser:
+            self.label1.set(get_logger_name(ser))
 
     def get_id(self):
         logging.debug('get_id')
-        self.label1.set('一人前')
+        with Serial(PORT, 115200, timeout=1) as ser:
+            self.label1.set(get_flash_id(ser))
     
     def read_memory(self):
         logging.debug('read_memory')
@@ -117,30 +127,41 @@ class App:
 
     def get_vbatt(self):
         logging.debug('get_vbatt')
+        with Serial(PORT, 115200, timeout=1) as ser:
+            self.label1.set(str(read_vbatt(ser)) + 'V')
 
     def read_sensors(self):
         logging.debug('read_sensors')
 
-    def set_rtc(self):
+    def set_clock(self):
         logging.debug('set_rtc')
+        with Serial(PORT, 115200, timeout=1) as ser:
+            set_rtc(ser, time.time())
+            self.label1.set(read_rtc(ser))
 
     def red_led_on(self):
         logging.debug('red_led_on')
+        Serial(PORT, 115200, timeout=1).write(b'red_led_on')
 
     def red_led_off(self):
         logging.debug('red_led_off')
+        Serial(PORT, 115200, timeout=1).write(b'red_led_off')
 
     def green_led_on(self):
         logging.debug('green_led_on')
+        Serial(PORT, 115200, timeout=1).write(b'green_led_on')
 
     def green_led_off(self):
         logging.debug('green_led_off')
+        Serial(PORT, 115200, timeout=1).write(b'green_led_off')
 
     def blue_led_on(self):
         logging.debug('blue_led_on')
+        Serial(PORT, 115200, timeout=1).write(b'blue_led_on')
 
     def blue_led_off(self):
         logging.debug('blue_led_off')
+        Serial(PORT, 115200, timeout=1).write(b'blue_led_off')
 
 
 logging.basicConfig(level=logging.DEBUG)

@@ -230,6 +230,12 @@ def serial_port_best_guess(prompt=False):
 
     P = platform.system()
 
+    if 'Windows' in P:
+        L = list_serial_port()
+        if prompt:
+            for c in L:
+                print(c.description)
+
     # see if there's any hint
     try:
         fn = join(dirname(__file__), 'saw.tmp')
@@ -246,10 +252,6 @@ def serial_port_best_guess(prompt=False):
 
     # for whatever reason, no hint on which serial port to use
     if 'Windows' in P:
-        L = list_serial_port()
-        if prompt:
-            for c in L:
-                print(c.description)
         return L[0].device
     else:
         # cu.usbserial########
@@ -262,7 +264,8 @@ def serial_port_best_guess(prompt=False):
                 return L[0]
 
             L = glob.glob('/dev/*usbserial*')   # still mac
-            return L[0]
+            if len(L):
+                return L[0]
 
             L = glob.glob('/dev/*usbmodem*')       # mac again
             if '.' in L:

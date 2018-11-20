@@ -53,7 +53,7 @@ if '__main__' == __name__:
     #fn = input('Path to the CSV file: ').strip()
 
     d = find('data/*', dironly=True)
-    fn = find(join(d, '*.csv'), fileonly=True)
+    fn = find(join(d, '*.csv'), fileonly=True, default='last')
     if fn is None:
         print('No CSV file found. Have you run bin2csv.py? Terminating.')
         sys.exit()
