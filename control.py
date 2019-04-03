@@ -2,13 +2,22 @@
 from tkinter import *
 import logging, time
 from serial import Serial
-from common import get_logger_name, get_flash_id, read_vbatt, serial_port_best_guess
+from common import get_logger_name, get_flash_id, read_vbatt
+from common import serial_port_best_guess, save_default_port
 from dev.set_rtc import set_rtc, read_rtc
 
 
-#PORT = serial_port_best_guess(prompt=True)
-PORT = 'COM3'
+print('Detected ports:')
+DEFAULT_PORT = serial_port_best_guess(prompt=True)
+print('- - -')
+PORT = input('PORT=? (default={})'.format(DEFAULT_PORT)).strip()
+# empty input, use default
+if '' == PORT:
+    PORT = DEFAULT_PORT
 print(PORT)
+
+with Serial(PORT, 115200, timeout=1) as ser:
+    save_default_port(PORT)
 
 
 class App:

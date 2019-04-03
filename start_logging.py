@@ -20,7 +20,7 @@ from os import makedirs
 from os.path import join, exists
 from serial import Serial
 from serial.serialutil import SerialException
-from set_rtc import set_rtc_aligned, read_rtc, ts2dt
+from dev.set_rtc import set_rtc_aligned, read_rtc, ts2dt
 from common import is_logging, stop_logging, probably_empty, get_logging_config, read_vbatt, get_flash_id, get_logger_name, InvalidResponseException
 
 
@@ -32,8 +32,10 @@ MAX_RETRY = 10
 # find the serial port to use from user, from history, or make a guess
 # if on Windows, print the list of COM ports
 from common import serial_port_best_guess, save_default_port
+print('Detected ports:')
 DEFAULT_PORT = serial_port_best_guess(prompt=True)
-PORT = input('PORT=? (default={}):'.format(DEFAULT_PORT)).strip()
+print('- - -')
+PORT = input('PORT=? (default={})'.format(DEFAULT_PORT)).strip()
 # empty input, use default
 if '' == PORT:
     PORT = DEFAULT_PORT

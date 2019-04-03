@@ -7,7 +7,7 @@
 import time, logging
 from serial import Serial
 from common import get_logger_name, get_flash_id, read_vbatt, is_logging, get_logging_config, InvalidResponseException
-from set_rtc import read_rtc, ts2dt
+from dev.set_rtc import read_rtc, ts2dt
 
 
 logging.basicConfig(level=logging.WARNING)
@@ -16,7 +16,9 @@ logging.basicConfig(level=logging.WARNING)
 # find the serial port to use from user, from history, or make a guess
 # if on Windows, print the list of COM ports
 from common import serial_port_best_guess, save_default_port
+print('Detected ports:')
 DEFAULT_PORT = serial_port_best_guess(prompt=True)
+print('- - -')
 PORT = input('PORT=? (default={})'.format(DEFAULT_PORT)).strip()
 # empty input, use default
 if '' == PORT:
