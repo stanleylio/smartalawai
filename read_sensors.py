@@ -13,7 +13,7 @@ from matplotlib.dates import DateFormatter
 import numpy as np
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 fn = 'read_sensors_output.csv'
 

@@ -11,7 +11,7 @@ from os import makedirs
 from os.path import join, exists
 from serial import Serial
 from serial.serialutil import SerialException
-from crc_check import check_response
+from dev.crc_check import check_response
 from common import is_logging, stop_logging, get_logging_config, read_vbatt, get_logger_name, get_flash_id, InvalidResponseException, SAMPLE_INTERVAL_CODE_MAP
 
 

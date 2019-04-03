@@ -3,11 +3,11 @@ from tkinter import *
 import logging, time
 from serial import Serial
 from common import get_logger_name, get_flash_id, read_vbatt, serial_port_best_guess
-from set_rtc import set_rtc, read_rtc
+from dev.set_rtc import set_rtc, read_rtc
 
 
 #PORT = serial_port_best_guess(prompt=True)
-PORT = 'COM15'
+PORT = 'COM3'
 print(PORT)
 
 
@@ -19,6 +19,9 @@ class App:
 
         row_status = Frame(master)
         row_status.pack()
+
+        row_sensors = Frame(master)
+        row_sensors.pack()
         
         row_memory = Frame(master)
         row_memory.pack()
@@ -45,8 +48,14 @@ class App:
         self.get_vbatt = Button(row_status, text='READ BATTERY VOLTAGE', command=self.get_vbatt)
         self.get_vbatt.pack(side=LEFT)
 
-        self.read_sensors = Button(row_status, text='READ SENSORS', command=self.read_sensors)
-        self.read_sensors.pack(side=LEFT)
+        self.read_temperature = Button(row_sensors, text='READ TEMPERATURE', command=self.read_temperature)
+        self.read_temperature.pack(side=LEFT)
+
+        self.read_pressure = Button(row_sensors, text='READ PRESSURE', command=self.read_pressure)
+        self.read_pressure.pack(side=LEFT)
+
+        self.read_ambient_lx = Button(row_sensors, text='READ AMBIENT', command=self.read_ambient_lx)
+        self.read_ambient_lx.pack(side=LEFT)
 
         self.read_memory = Button(row_memory, text='EXTRACT DATA', command=self.read_memory)
         self.read_memory.pack(side=LEFT)
@@ -75,11 +84,11 @@ class App:
 
         self.v = IntVar()
         self.v.set(2)
-        self.radio1 = Radiobutton(row_config, text='0.2 second', variable=self.v, value=1)
+        self.radio1 = Radiobutton(row_config, text='0.2 second', variable=self.v, value=0)
         self.radio1.pack(anchor=W)
-        self.radio2 = Radiobutton(row_config, text='1 second', variable=self.v, value=2)
+        self.radio2 = Radiobutton(row_config, text='1 second', variable=self.v, value=1)
         self.radio2.pack(anchor=W)
-        self.radio3 = Radiobutton(row_config, text='60 second', variable=self.v, value=3)
+        self.radio3 = Radiobutton(row_config, text='60 second', variable=self.v, value=2)
         self.radio3.pack(anchor=W)
 
         self.set_logging_interval = Button(row_config, text='SET SAMPLING INTERVAL', command=self.set_logging_interval)
@@ -130,8 +139,24 @@ class App:
         with Serial(PORT, 115200, timeout=1) as ser:
             self.label1.set(str(read_vbatt(ser)) + 'V')
 
-    def read_sensors(self):
-        logging.debug('read_sensors')
+    def read_temperature(self):
+        logging.debug('read_temperature')
+        with Serial(PORT, 115200, timeout=1) as ser:
+            ser.write(b'read_temperature')
+            self.label1.set(ser.readline().decode().strip())
+
+    def read_pressure(self):
+        logging.debug('read_pressure')
+        with Serial(PORT, 115200, timeout=1) as ser:
+            ser.write(b'read_pressure')
+            self.label1.set(ser.readline().decode().strip())
+
+    def read_ambient_lx(self):
+        logging.debug('read_ambient_lx')
+        with Serial(PORT, 115200, timeout=1) as ser:
+            ser.write(b'read_ambient_lx')
+            r = ser.readline().decode().strip().split(',')[0]
+            self.label1.set(r)
 
     def set_clock(self):
         logging.debug('set_rtc')
