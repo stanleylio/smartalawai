@@ -50,7 +50,7 @@ if '__main__' == __name__:
 
     # find the serial port to use from user, from history, or make a guess
     # if on Windows, print the list of COM ports
-    from common import serial_port_best_guess, save_default_port
+    from ..common import serial_port_best_guess, save_default_port
     DEFAULT_PORT = serial_port_best_guess(prompt=True)
     PORT = input('PORT=? (default={}):'.format(DEFAULT_PORT)).strip()
     # empty input, use default

@@ -22,6 +22,9 @@ if '' == PORT:
     PORT = DEFAULT_PORT
 
 with Serial(PORT, 115200, timeout=1) as ser:
+
+    save_default_port(PORT)
+    
     if is_logging(ser):
         r = input('Cannot rename logger while it is running. Stop it? (yes/no; default=no)')
         if 'yes' == r.strip():
