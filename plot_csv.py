@@ -29,9 +29,7 @@ def read_and_parse_data(fn):
     
     # Cory wants a human time column
     line = open(fn).readline().split(',')
-    has_human_time = False
-    if 10 == len(line):     # has human time
-        has_human_time = True
+    has_human_time = 10 == len(line)
 
     D = []
     for line in open(fn):
@@ -75,7 +73,7 @@ if '__main__' == __name__:
 
     # also PSD... TODO
 
-    print('Calculating Temperature statistics...')
+    '''print('Calculating Temperature statistics...')
     plt.figure(figsize=(16, 9))
 
     ax = plt.subplot(211)
@@ -103,7 +101,7 @@ if '__main__' == __name__:
     ax.set_ylabel('(count)')
     ax.grid(True)
 
-    plt.tight_layout()
+    plt.tight_layout()'''
 
 
     #print('Step sizes: ', end='')

@@ -142,7 +142,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
 
     while True:
         r = input('Wipe memory? (yes/no; default=yes)')
-        if r in ['', 'yes', 'no']:
+        if r.lower() in ['', 'yes', 'no']:
             break
     if r.strip().lower() in ['yes', '']:        # anything else is considered a NO (don't wipe).
         logging.debug('User wants to wipe memory.')
