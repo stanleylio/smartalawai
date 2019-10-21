@@ -1,9 +1,8 @@
 # Plot a CSV file given a logger's unique ID.
 #
-# MESH Lab
-# University of Hawaii
-# Copyright 2018 Stanley H.I. Lio
+# Stanley H.I. Lio
 # hlio@hawaii.edu
+# MESHLAB, UH Manoa
 import struct, math, sys, csv, logging, json
 from os.path import join, exists
 import matplotlib.pyplot as plt
