@@ -19,7 +19,10 @@ from datetime import datetime
 
 
 SAMPLE_INTERVAL_CODE_MAP = {0:1/5, 1:1, 2:60}
-
+# W25Q128JV: 128Mb, or 16MB. 65536 of 256-byte pages. Min. erase size = 1 sector = 16 pages (4096 bytes)
+SPI_FLASH_SIZE_BYTE = 16*1024*1024
+SPI_FLASH_PAGE_SIZE_BYTE = 256
+SAMPLE_SIZE = 20    # size of one sample in byte
 
 class InvalidResponseException(Exception):
     pass
