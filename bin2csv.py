@@ -90,9 +90,11 @@ def bin2csv(fn_bin, fn_csv, config):
     logging.debug('Writing to {}...'.format(fn_csv))
     with open(fn_csv, 'w', newline='') as fout:
         writer = csv.writer(fout, delimiter=',')
+        fs = [str, str, lambda x: '{:.4f}'.format(x), lambda x: '{:.3f}'.format(x), str, str, str, str, str, str]
         writer.writerow(['UTC_datetime', 'posix_timestamp', 'T_DegC', 'P_kPa', 'ambient_light_hdr', 'white_light_hdr', 'red', 'green', 'blue', 'white'])
         for d in D:
-            writer.writerow([str(x) for x in d])
+            #writer.writerow([str(x) for x in d])
+            writer.writerow([f(x) for f,x in zip(fs, d)])
     
 
 if '__main__' == __name__:
