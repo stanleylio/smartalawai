@@ -41,8 +41,10 @@ def ts2dt(ts=None):
 
 def is_logging(ser, maxretry=10):
     logging.debug('is_logging()')
-    ser.reset_output_buffer()
+    ser.flushInput()
+    ser.flushOutput()
     ser.reset_input_buffer()
+    ser.reset_output_buffer()
 
     for i in range(maxretry):
         try:
@@ -56,7 +58,7 @@ def is_logging(ser, maxretry=10):
             if len(r) == 3 and r[0] in ['0', '1']:
                 return '1' == r[0]
         except (UnicodeDecodeError, IndexError, TypeError, ValueError):
-            logging.exception('')
+            logging.debug(r)
         time.sleep(random.randint(0, 90)/100)
 
     raise InvalidResponseException('Invalid/no response from logger')
@@ -64,8 +66,10 @@ def is_logging(ser, maxretry=10):
 
 def stop_logging(ser, maxretry=10):
     logging.debug('stop_logging()')
-    ser.reset_output_buffer()
+    ser.flushInput()
+    ser.flushOutput()
     ser.reset_input_buffer()
+    ser.reset_output_buffer()
 
     stopped = False
     for i in range(maxretry):
@@ -83,8 +87,10 @@ def stop_logging(ser, maxretry=10):
 
 def probably_empty(ser, maxretry=5):
     logging.debug('probably_empty()')
-    ser.reset_output_buffer()
+    ser.flushInput()
+    ser.flushOutput()
     ser.reset_input_buffer()
+    ser.reset_output_buffer()
 
     for i in range(maxretry):
         ser.write(b'is_logging')
@@ -155,8 +161,10 @@ def read_vbatt(ser, maxretry=10):
 
 def get_logger_name(ser, maxretry=10):
     logging.debug('get_logger_name()')
-    ser.reset_output_buffer()
+    ser.flushInput()
+    ser.flushOutput()
     ser.reset_input_buffer()
+    ser.reset_output_buffer()
 
     # there's no easy way to tell whether the name is not set, the logger is not responding, or those gibberish characters really is the name
     # without proper framing and checksum in storage and in comm, any check you do here is just heuristics/guess/hack
@@ -255,7 +263,7 @@ def serial_port_best_guess(prompt=False):
 
     # for whatever reason, no hint on which serial port to use
     if 'Windows' in P:
-        return L[0].device
+        return L[-1].device
     else:
         # cu.usbserial########
         # tty.usbserial########
@@ -264,15 +272,15 @@ def serial_port_best_guess(prompt=False):
         if exists('/dev'):
             L = glob.glob('/dev/ttyUSB*')       # mac, or pi with adapter
             if len(L):
-                return L[0]
+                return L[-1]
 
             L = glob.glob('/dev/*usbserial*')   # still mac
             if len(L):
-                return L[0]
+                return L[-1]
 
             L = glob.glob('/dev/*usbmodem*')       # mac again
             if '.' in L:
-                return L[0]
+                return L[-1]
 
     return '/dev/ttyS0'
 
