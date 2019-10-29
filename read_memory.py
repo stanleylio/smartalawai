@@ -9,7 +9,9 @@ from os.path import join, exists
 from serial import Serial
 from serial.serialutil import SerialException
 from dev.crc_check import check_response
-from common import SPI_FLASH_SIZE_BYTE, SPI_FLASH_PAGE_SIZE_BYTE, is_logging, stop_logging, get_logging_config, read_vbatt, get_logger_name, get_flash_id, InvalidResponseException, SAMPLE_INTERVAL_CODE_MAP
+from common import SPI_FLASH_SIZE_BYTE, SPI_FLASH_PAGE_SIZE_BYTE, SAMPLE_INTERVAL_CODE_MAP,\
+     is_logging, stop_logging, get_logging_config, read_vbatt, get_logger_name, get_flash_id,\
+     InvalidResponseException
 from bin2csv import bin2csv
 
 

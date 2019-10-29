@@ -8,7 +8,7 @@ from os.path import join, exists
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import numpy as np
-from scipy.stats import describe
+#from scipy.stats import describe
 from bin2csv import find
 from common import ts2dt, dt2ts
 
