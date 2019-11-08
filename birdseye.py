@@ -133,7 +133,7 @@ if '__main__' == __name__:
 
         # - - -
 
-        print('plotting... ', end='')
+        print(' plotting... ', end='')
         
         fig, ax = plt.subplots(4, 1, figsize=(16, 9), sharex=True)
         for tmp in ax[:-1]:
