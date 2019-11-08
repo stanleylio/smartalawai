@@ -1,4 +1,5 @@
-# Print metadata of attached logger.
+# Make a plot of the content in the logger.
+# Sparsely sampled if there are lots of samples.
 #
 # MESH Lab
 # University of Hawaii
@@ -102,10 +103,17 @@ if '__main__' == __name__:
         ser.reset_input_buffer()
         ser.reset_output_buffer()
 
+        print('Reading memory', end='')
+
         D = []
         current_page_index = None
         current_page = None
+
+        _last_dotted = 0
         for sample_index in range(0, sample_count, STRIDE):
+            if sample_index - _last_dotted >= sample_count/10:
+                _last_dotted = sample_index
+                print('.', end='')
             try:
                 page, index = sampleindex2flashaddress(sample_index)
                 if current_page_index != page:
@@ -125,7 +133,7 @@ if '__main__' == __name__:
 
         # - - -
 
-        print('Plotting... ', end='')
+        print('plotting... ', end='')
         
         fig, ax = plt.subplots(4, 1, figsize=(16, 9), sharex=True)
         for tmp in ax[:-1]:
@@ -137,6 +145,24 @@ if '__main__' == __name__:
         else:
             plt.suptitle('Memory Overview (plotting everything)')
             
+        # add caption
+        s = 'Logger "{}" (ID={})'.format(logger_name, flash_id)
+        s += '\n{:,} samples from {} to {} spanning ~{:.1f} days'.format(sample_count,
+                                                                       min(D[0]).isoformat()[:19].replace('T', ' '),
+                                                                       max(D[0]).isoformat()[:19].replace('T', ' '),
+                                                                       (max(D[0]) - min(D[0])).total_seconds()/3600/24)
+
+        if STRIDE > 1:
+            s += ' (Plotting {} out of {})'.format(number_to_read, sample_count)
+        else:
+            s += ' (Plotting all samples)'.format(number_to_read, sample_count)
+        
+        plt.figtext(0.99, 0.01,
+                    s,
+                    horizontalalignment='right',
+                    color='k',
+                    alpha=0.5)
+
         ax[0].plot_date(D[0], D[1], 'r.:', label='Deg.C')
         ax[0].legend(loc=2)
         ax[0].grid(True)
