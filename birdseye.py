@@ -64,7 +64,7 @@ if '__main__' == __name__:
                 logging.debug('User wants to stop logging.')
                 ser.write(b'stop_logging')
             else:
-                print('This script cannot proceed while logger is still running. Abort.')
+                print('This script cannot proceed while logger is still running. ABORT.')
                 sys.exit()
 
         logger_name = get_logger_name(ser)
@@ -90,9 +90,9 @@ if '__main__' == __name__:
         number_to_read = min(DOWNSAMPLE_N, sample_count)
         STRIDE = int(sample_count // number_to_read)
         m = '{} in steps of {}'.format(number_to_read, STRIDE) if STRIDE > 1 else 'everything'
-        print('{} sample(s) in memory ({} page(s) out of {}). Requested {} sample(s); will read {}.'.\
+        print('{} sample(s) in memory ({} page(s) out of {}).\r\nRequested {} sample(s); will read {}.'.\
               format(sample_count, page_used, SPI_FLASH_SIZE_BYTE//SPI_FLASH_PAGE_SIZE_BYTE, DOWNSAMPLE_N, m))
-        print('First sample taken at {}.'.format(ts2dt(logging_start_time)))
+        print('First sample taken at {} UTC.'.format(ts2dt(logging_start_time)))
         
         # - - -
 
