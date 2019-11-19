@@ -186,8 +186,10 @@ with Serial(PORT, 115200, timeout=1) as ser:
     
     config = json.dumps(config, separators=(',',':'))
     logging.debug(config)
-    fn = '{}_{}.config'.format(flash_id, logging_start_time)
-    fn = join('data', flash_id, fn)
+    
+    fn = join('data', flash_id)
+    if not exists(fn):
+        makedirs(fn)
+    fn = join(fn, '{}_{}.config'.format(flash_id, logging_start_time))
     open(fn, 'w', 1).write(config)
-
     print('Config file saved to {}'.format(fn))
