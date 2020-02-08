@@ -58,7 +58,7 @@ with Serial(PORT, 115200, timeout=1) as ser:
     logging.debug('Stop ongoing logging if necessary...')
     try:
         if is_logging(ser):
-            r = input('Logger is already logging. Stop it first? (yes/no; default=no)')
+            r = input('Logger is already logging. Stop it first? (yes/no; DEFAULT=no)')
             if r.strip().lower() in ['yes']:
                 if not stop_logging(ser, maxretry=20):
                     logging.error('Logger is still logging and is not responding to stop_logging. Terminating.')
