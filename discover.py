@@ -1,16 +1,14 @@
-# Print metadata of attached logger.
+# Search for loggers. Display their metadata if found. Only show newly found ones.
 #
 # Stanley H.I. Lio
 # hlio@hawaii.edu
 # MESHLAB, UH Manoa
-import time, logging
+import time, logging, random
 from serial import Serial
-from common import get_logger_name, get_flash_id, read_vbatt, is_logging, get_logging_config, InvalidResponseException
-from dev.set_rtc import read_rtc, ts2dt
+from kiwi import Kiwi
+from common import ts2dt
 
-
-logging.basicConfig(level=logging.WARNING)
-
+logging.basicConfig(level=logging.DEBUG)
 
 # find the serial port to use from user, from history, or make a guess
 # if on Windows, print the list of COM ports
@@ -28,32 +26,31 @@ with Serial(PORT, 115200, timeout=1) as ser:
 
     save_default_port(PORT)
 
+    known_ids = set()
+
     while True:
         try:
-            name = get_logger_name(ser)
-            flash_id = get_flash_id(ser)
-            running = is_logging(ser)
-            vbatt = read_vbatt(ser)
-            rtc = read_rtc(ser)
-            r = get_logging_config(ser)
-            logging_start_time = r['logging_start_time']
-            logging_stop_time = r['logging_stop_time']
+            kiwi = Kiwi(ser)
+            config = kiwi.get_config(use_cached=True)
 
-            running = 'Logging' if running else 'Not logging'
-
-            if logging_start_time > 0:
-                if logging_stop_time > logging_start_time:
-                    r = 'Contains data from {} to {}'.format(ts2dt(logging_start_time), ts2dt(logging_stop_time))
-                else:
-                    r = 'Contains data from {} (no stop record)'.format(ts2dt(logging_start_time))
+            if config['id'] not in known_ids:
+                known_ids.add(config['id'])
+                print('Found "{}" (ID={}); battery={:.1f} V; {}.'.format(config['name'],
+                                                                         config['id'],
+                                                                         kiwi.get_battery_voltage(),
+                                                                         'LOGGING' if kiwi.is_logging() else 'not logging',
+                                                                         ))
             else:
-                r = 'No existing data.'
+                logging.debug('I have seen {} already.'.format(config['id']))
 
-            print('NAME="{}" ID={} RTC={}, BATTERY={:.2f}V. {}. {}'.format(name, flash_id, ts2dt(rtc), vbatt, running, r))
-        except (InvalidResponseException, UnicodeDecodeError, ValueError, IndexError, TypeError) as e:
-            #logging.exception('')
-            pass
+            time.sleep(1)
+        except (UnicodeDecodeError, ValueError, IndexError, TypeError) as e:
+            logging.debug(e)
+        except RuntimeError:
+            if random.random() > 0.8:
+                print('[cricket sound]')
+            time.sleep(1)
         except KeyboardInterrupt:
             break
 
-    time.sleep(1)
+        

@@ -7,9 +7,7 @@
 import time
 from itertools import cycle
 from serial import Serial
-
-
-cmds = cycle(['red_led_on', 'red_led_off', 'green_led_on', 'green_led_off', 'blue_led_on', 'blue_led_off'])
+from kiwi import Kiwi
 
 
 # find the serial port to use from user, from history, or make a guess
@@ -24,7 +22,18 @@ if '' == PORT:
 with Serial(PORT, 115200, timeout=1) as ser:
 
     save_default_port(PORT)
+    
+    kiwi = Kiwi(ser)
+
+    if 0 == kiwi._version:
+        cmds = cycle(['red_led_on', 'red_led_off', 'green_led_on', 'green_led_off', 'blue_led_on', 'blue_led_off'])
+    else:
+        cmds = cycle(['ron', 'roff', 'gon', 'goff', 'bon', 'boff'])
 
     while True:
-        ser.write(next(cmds).encode())
-        time.sleep(0.1)
+        try:
+            ser.write(next(cmds).encode())
+            time.sleep(0.1)
+        except KeyboardInterrupt:
+            ser.write(b'red_led_off green_led_off blue_led_off roff goff boff')
+            break

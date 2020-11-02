@@ -11,7 +11,8 @@ import struct, math, sys, csv, json, logging
 from datetime import datetime
 from glob import glob
 from os.path import join, exists, basename, isdir, isfile
-from common import SPI_FLASH_PAGE_SIZE_BYTE, SAMPLE_INTERVAL_CODE_MAP, SAMPLE_SIZE_BYTE, ts2dt, dt2ts
+from kiwi import Kiwi
+from common import SAMPLE_INTERVAL_CODE_MAP, ts2dt, dt2ts
 
 
 def find(pattern, *_, dironly=False, fileonly=False, default=None):
@@ -32,15 +33,18 @@ def find(pattern, *_, dironly=False, fileonly=False, default=None):
             for k,v in enumerate(FN, start=1):
                 print('{}.\t{}'.format(k,v))
 
-            if default:
-                r = input('Your choice (default=last): ').strip().upper()
+            if default is not None:
+                r = input('Your choice (default={}): '.format(default)).strip().upper()
             else:
                 r = input('Your choice: ').strip().upper()
 
-            if 'last' == default:
-                if len(r) <= 0:
+            if len(r) <= 0:
+                # default is chosen
+                if 'last' == default:
                     return FN[-1]
                 #yeah that only makes sense for .bin. Not for logger selection.
+                else:
+                    return default
 
             if r not in [str(v) for v in range(1, len(FN) + 1)]:
                 tmp = list(filter(lambda x: r in x, FN))
@@ -63,19 +67,22 @@ def bin2csv(fn_bin, fn_csv, config):
     D = []
     with open(fn_bin, 'rb') as fin:
         while True:
-            page = fin.read(SPI_FLASH_PAGE_SIZE_BYTE)
-            if len(page) < SPI_FLASH_PAGE_SIZE_BYTE:
+            page = fin.read(Kiwi.SPI_FLASH_PAGE_SIZE_BYTE)
+            if len(page) < Kiwi.SPI_FLASH_PAGE_SIZE_BYTE:
                 break
 
-            L = list(range(0, SPI_FLASH_PAGE_SIZE_BYTE, SAMPLE_SIZE_BYTE))
+            L = list(range(0, Kiwi.SPI_FLASH_PAGE_SIZE_BYTE, 4+4+2+2+2+2+2+2 if config['use_light'] else 4+4))
             for a,b in list(zip(L[::], L[1::])):
-                d = struct.unpack('ffHHHHHH', page[a:b])
+                d = struct.unpack('ffHHHHHH' if config['use_light'] else 'ff', page[a:b])
                 if any([math.isnan(dd) for dd in d]):
                     break
                 D.append(d)
 
     logging.debug('Reconstructing time axis...')
-    ts = construct_timestamp(config['logging_start_time'], len(D), SAMPLE_INTERVAL_CODE_MAP[config['logging_interval_code']])
+    if 'logging_start_time' in config and 'logging_interval_code' in config:
+        ts = construct_timestamp(config['logging_start_time'], len(D), SAMPLE_INTERVAL_CODE_MAP[config['logging_interval_code']])
+    else:
+        ts = construct_timestamp(config['start'], len(D), config['interval_ms']*1e-3)
     dt = [ts2dt(tmp) for tmp in ts]
     tmp = list(zip(*D))
     tmp.insert(0, ts)
@@ -85,8 +92,12 @@ def bin2csv(fn_bin, fn_csv, config):
     logging.debug('Writing to {}...'.format(fn_csv))
     with open(fn_csv, 'w', newline='') as fout:
         writer = csv.writer(fout, delimiter=',')
-        fs = [str, str, lambda x: '{:.4f}'.format(x), lambda x: '{:.3f}'.format(x), str, str, str, str, str, str]
-        writer.writerow(['UTC_datetime', 'posix_timestamp', 'T_DegC', 'P_kPa', 'ambient_light_hdr', 'white_light_hdr', 'red', 'green', 'blue', 'white'])
+        if config['use_light']:
+            fs = [str, str, lambda x: '{:.4f}'.format(x), lambda x: '{:.3f}'.format(x), str, str, str, str, str, str]
+            writer.writerow(['UTC_datetime', 'posix_timestamp', 'T_DegC', 'P_kPa', 'ambient_light_hdr', 'white_light_hdr', 'red', 'green', 'blue', 'white'])
+        else:
+            fs = [str, str, lambda x: '{:.4f}'.format(x), lambda x: '{:.3f}'.format(x)]
+            writer.writerow(['UTC_datetime', 'posix_timestamp', 'T_DegC', 'P_kPa'])
         for d in D:
             #writer.writerow([str(x) for x in d])
             writer.writerow([f(x) for f,x in zip(fs, d)])

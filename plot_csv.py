@@ -8,25 +8,20 @@ from os.path import join, exists
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 from bin2csv import find
-from common import ts2dt, dt2ts
+from common import ts2dt, dt2ts, get_most_recent_id
 
-
-def get_logger_name(fn):
-    # find the name of the logger, if possible
-    logger_name = None
+def get_config(fn):
     configfilename = fn.split('.')[0] + '.config'
-    if exists(configfilename):
-        logging.debug('Found config file {}'.format(configfilename))
-        config = json.load(open(configfilename))
-        logger_name = config.get('logger_name', None)
-    return logger_name
-
+    if not exists(configfilename):
+        logging.error('Can\'t find config file for {}'.format(fn))
+        return None
+    logging.debug('Found config file {}'.format(configfilename))
+    return json.load(open(configfilename))
 
 def read_and_parse_data(fn):
-    
     # Cory wants a human time column
     line = open(fn).readline().split(',')
-    has_human_time = 10 == len(line)
+    has_human_time = 10 == len(line) or 4 == len(line)
 
     D = []
     for line in open(fn):
@@ -47,110 +42,67 @@ if '__main__' == __name__:
     #fn = UNIQUE_ID + '.csv'
     #fn = input('Path to the CSV file: ').strip()
 
-    d = find('data/*', dironly=True)
+    default = 'last'
+    tmp = get_most_recent_id()
+    if tmp is not None and exists(join('data', tmp)):
+        default = join('data/', tmp)
+
+    d = find('data/*', dironly=True, default=default)
     fn = find(join(d, '*.csv'), fileonly=True, default='last')
     if fn is None:
         print('No CSV file found. Have you run bin2csv.py? Terminating.')
         sys.exit()
 
-    logger_name = get_logger_name(fn)
+    config = get_config(fn)
+    logger_name = config['name']
 
-    ts, t,p, als,white, r,g,b,w = read_and_parse_data(fn)
+    if config.get('use_light', True):
+        ts, t,p, als,white, r,g,b,w = read_and_parse_data(fn)
+    else:
+        ts, t,p = read_and_parse_data(fn)
     begin, end = ts2dt(min(ts)), ts2dt(max(ts))
 
     if len(ts) <= 1:
         print('Only less than two measurements are available. ABORT.')
 
-    print('{} samples from {} to {} spanning {}, average interval {:.3}s'.format(
+    print('{:,} samples from {} to {} spanning {}, interval {:.3}s'.format(
         len(ts),
         begin,
         end,
         end - begin,
         ts[1] - ts[0]))
 
-    # - - -
-
-    #print(describe(p))
-
-    # also PSD... TODO
-
-    '''print('Calculating Temperature statistics...')
-    plt.figure(figsize=(16, 9))
-
-    ax = plt.subplot(211)
-    ax.hist(np.diff(t), color='r', bins='auto')
-    if logger_name is not None:
-        logger_name = logger_name.strip()
-        if len(logger_name):
-            ax.set_title('Step Size Distribution (Temperature; "{}")'.format(logger_name))
-    else:
-        ax.set_title('Step Size Distribution (Temperature)')
-    ax.set_xlabel('Deg.C')
-    ax.set_ylabel('(count)')
-    ax.grid(True)
-
-    print('Calculating Pressure statistics...')
-    ax = plt.subplot(212)
-    ax.hist(np.diff(p), bins='auto')
-    if logger_name is not None:
-        logger_name = logger_name.strip()
-        if len(logger_name):
-            ax.set_title('Step Size Distribution (Pressure; "{}")'.format(logger_name))
-    else:
-        ax.set_title('Step Size Distribution (Pressure)')
-    ax.set_xlabel('kPa')
-    ax.set_ylabel('(count)')
-    ax.grid(True)
-
-    plt.tight_layout()'''
-
-
-    #print('Step sizes: ', end='')
-    #print(sorted(np.unique(tmp)))
-
     dt = [ts2dt(tmp) for tmp in ts]
 
     print('Plotting time series...')
-    plt.figure(figsize=(16, 9))
-    ax1 = plt.subplot(411)
-    ax2 = plt.subplot(412, sharex=ax1)
-    ax3 = plt.subplot(413, sharex=ax1)
-    ax4 = plt.subplot(414, sharex=ax1)
-    
-    plt.setp(ax1.get_xticklabels(), visible=False)
-    plt.setp(ax2.get_xticklabels(), visible=False)
-    plt.setp(ax3.get_xticklabels(), visible=False)
+    fig, ax = plt.subplots(4 if config['use_light'] else 2, 1, figsize=(16, 9), sharex=True)
 
-    ax4.set_xlabel('UTC Time')
-    
+    [plt.setp(a.get_xticklabels(), visible=False) for a in ax[:-1]]
+    ax[-1].set_xlabel('UTC Time')
+    ax[-1].xaxis.set_major_formatter(DateFormatter('%b %d %H:%M:%S'))
+
     if logger_name is not None:
         logger_name = logger_name.strip()
         if len(logger_name):
-            ax1.set_title(fn + ' ("{}")'.format(logger_name))
+            fig.suptitle(fn + ' ("{}")'.format(logger_name))
     else:
-        ax1.set_title(fn)
+        fig.suptitle(fn)
 
-    ax1.plot_date(dt, t, 'r.:', label='Deg.C')
-    ax1.legend(loc=2)
-    ax1.grid(True)
+    ax[0].plot_date(dt, t, 'r.:', label='℃')
+    ax[1].plot_date(dt, p, '.:', label='kPa')
 
-    ax2.plot_date(dt, p, '.:', label='kPa')
-    ax2.legend(loc=2)
-    ax2.grid(True)
+    if config.get('use_light', True):
+        ax[2].plot_date(dt, als, '.:', label='HDR_ALS', alpha=0.5)
+        ax[2].plot_date(dt, white, '.:', label='HDR_W', alpha=0.5)
 
-    ax3.plot_date(dt, als, '.:', label='als', alpha=0.5)
-    ax3.plot_date(dt, white, '.:', label='white', alpha=0.5)
-    ax3.legend(loc=2)
-    ax3.grid(True)
+        ax[3].plot_date(dt, r, 'r.:', label='R', alpha=0.5)
+        ax[3].plot_date(dt, g, 'g.:', label='G', alpha=0.5)
+        ax[3].plot_date(dt, b, 'b.:', label='B', alpha=0.5)
+        ax[3].plot_date(dt, w, 'k.:', label='W', alpha=0.2)
 
-    ax4.plot_date(dt, r, 'r.:', label='r', alpha=0.5)
-    ax4.plot_date(dt, g, 'g.:', label='g', alpha=0.5)
-    ax4.plot_date(dt, b, 'b.:', label='b', alpha=0.5)
-    ax4.plot_date(dt, w, 'k.:', label='w', alpha=0.2)
-    ax4.legend(loc=2)
-    ax4.grid(True)
+    [a.legend(loc=2) for a in ax]
+    [a.grid(True) for a in ax]
 
-    ax4.xaxis.set_major_formatter(DateFormatter('%b %d %H:%M:%S'))
     plt.tight_layout()
     plt.gcf().autofmt_xdate()
 

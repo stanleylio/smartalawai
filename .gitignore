@@ -108,3 +108,6 @@ ENV/
 data/
 test data/
 obsolete/
+
+desktop.ini
+

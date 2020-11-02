@@ -9,10 +9,9 @@ import tkinter as tk
 import logging, time, sys
 from functools import partial
 from serial import Serial
-from common import get_logger_name, get_flash_id, read_vbatt
-from common import serial_port_best_guess, save_default_port
-from dev.set_rtc import set_rtc, read_rtc, ts2dt
-
+from common import serial_port_best_guess, save_default_port, ts2dt
+from kiwi import Kiwi
+from dev.set_rtc import set_rtc, read_rtc
 
 print('Detected ports:')
 DEFAULT_PORT = serial_port_best_guess(prompt=True)
@@ -21,107 +20,110 @@ PORT = input('Which one to use? (default={})'.format(DEFAULT_PORT)).strip()
 # empty input, use default
 if '' == PORT:
     PORT = DEFAULT_PORT
-print(PORT)
 
 with Serial(PORT, 115200, timeout=1) as ser:
+    
     save_default_port(PORT)
-
 
 def get_name(ent):
     logging.debug('get_name')
     with Serial(PORT, 115200, timeout=1) as ser:
+        kiwi = Kiwi(ser)
         ent.config(state='normal')
         ent.delete(0, tk.END)
-        ent.insert(0, get_logger_name(ser))
+        ent.insert(0, kiwi.get_config(use_cached=True)['name'])
         ent.config(state='readonly')
 
 def get_id(ent):
     logging.debug('get_id')
     with Serial(PORT, 115200, timeout=1) as ser:
+        kiwi = Kiwi(ser)
         ent.config(state='normal')
         ent.delete(0, tk.END)
-        ent.insert(0, get_flash_id(ser))
+        ent.insert(0, kiwi.get_config(use_cached=True)['id'])
         ent.config(state='readonly')
 
 def read_battery_voltage(ent):
     logging.debug('get_vbatt')
     with Serial(PORT, 115200, timeout=1) as ser:
+        kiwi = Kiwi(ser)
         ent.config(state='normal')
         ent.delete(0, tk.END)
-        ent.insert(0, '{} V'.format(read_vbatt(ser)))
+        ent.insert(0, '{} V'.format(kiwi.get_battery_voltage()))
         ent.config(state='readonly')
 
 def read_clock(ent):
     logging.debug('read_clock')
     with Serial(PORT, 115200, timeout=1) as ser:
+        kiwi = Kiwi(ser)
         ent.config(state='normal')
         ent.delete(0, tk.END)
-        ent.insert(0, '{}'.format(ts2dt(read_rtc(ser))))
+        ent.insert(0, '{}'.format(ts2dt(kiwi.read_rtc())))
         ent.config(state='readonly')
 
 def set_clock(ent):
     logging.debug('set_clock')
     with Serial(PORT, 115200, timeout=1) as ser:
-        set_rtc(ser)
+        kiwi = Kiwi(ser)
+        kiwi.set_rtc()
 
 def read_temperature(ent):
     logging.debug('read_temperature')
     with Serial(PORT, 115200, timeout=1) as ser:
-        ser.write(b'read_temperature')
+        kiwi = Kiwi(ser)
         ent.config(state='normal')
         ent.delete(0, tk.END)
-        v = ser.readline().decode().strip()
-        v = v.split(' ')[0]
-        ent.insert(0, '{} \u00b0C'.format(v))
+        ent.insert(0, '{} \u2103'.format(kiwi.read_temperature()))
         ent.config(state='readonly')
 
 def read_pressure(ent):
     logging.debug('read_pressure')
     with Serial(PORT, 115200, timeout=1) as ser:
-        ser.write(b'read_pressure')
+        kiwi = Kiwi(ser)
         ent.config(state='normal')
         ent.delete(0, tk.END)
         v = ser.readline().decode().strip()
-        ent.insert(0, v)
+        ent.insert(0, '{} kPa'.format(kiwi.read_pressure()))
         ent.config(state='readonly')
 
 def read_ambient_lx(ent):
     logging.debug('read_ambient_lx')
     with Serial(PORT, 115200, timeout=1) as ser:
-        ser.write(b'read_ambient_lx')
+        kiwi = Kiwi(ser)
         ent.config(state='normal')
         ent.delete(0, tk.END)
-        ent.insert(0, ser.readline().decode().strip().split(',')[0])
+        ent.insert(0, '{} lux'.format(kiwi.read_light()['hdr_als']))
         ent.config(state='readonly')
 
 def read_rgbw(ent):
     logging.debug('read_rgbw')
     with Serial(PORT, 115200, timeout=1) as ser:
-        ser.write(b'read_rgbw')
+        kiwi = Kiwi(ser)
         ent.config(state='normal')
         ent.delete(0, tk.END)
-        ent.insert(0, ser.readline().decode().strip())
+        r = kiwi.read_light()
+        ent.insert(0, '{}, {}, {}, {} (lux)'.format(r['r'], r['g'], r['b'], r['w']))
         ent.config(state='readonly')
 
 def led_red(ent):
     logging.debug('led_red')
     if 'on' not in led_red.__dict__: led_red.on = True
     with Serial(PORT, 115200, timeout=1) as ser:
-        ser.write(b'red_led_on' if led_red.on else b'red_led_off')
+        ser.write(b'red_led_on ron' if led_red.on else b'red_led_off roff')
     led_red.on = not led_red.on
 
 def led_green(ent):
     logging.debug('led_green')
     if 'on' not in led_green.__dict__: led_green.on = True
     with Serial(PORT, 115200, timeout=1) as ser:
-        ser.write(b'green_led_on' if led_green.on else b'green_led_off')
+        ser.write(b'green_led_on gon' if led_green.on else b'green_led_off goff')
     led_green.on = not led_green.on
 
 def led_blue(ent):
     logging.debug('led_blue')
     if 'on' not in led_blue.__dict__: led_blue.on = True
     with Serial(PORT, 115200, timeout=1) as ser:
-        ser.write(b'blue_led_on' if led_blue.on else b'blue_led_off')
+        ser.write(b'blue_led_on bon' if led_blue.on else b'blue_led_off boff')
     led_blue.on = not led_blue.on
 
 
@@ -170,10 +172,11 @@ class App:
     def set_clock(self):
         logging.debug('set_rtc')
         with Serial(PORT, 115200, timeout=1) as ser:
-            set_rtc(ser, time.time())
-            self.label1.set(read_rtc(ser))
+            kiwi = Kiwi(ser)
+            kiwi.set_rtc()
+            self.label1.set(kiwi.read_rtc())
 
-    def red_led_on(self):
+    '''def red_led_on(self):
         logging.debug('red_led_on')
         Serial(PORT, 115200, timeout=1).write(b'red_led_on')
 
@@ -195,7 +198,7 @@ class App:
 
     def blue_led_off(self):
         logging.debug('blue_led_off')
-        Serial(PORT, 115200, timeout=1).write(b'blue_led_off')
+        Serial(PORT, 115200, timeout=1).write(b'blue_led_off')'''
 
 
 logging.basicConfig(level=logging.DEBUG)
