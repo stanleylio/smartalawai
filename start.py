@@ -31,9 +31,9 @@ if '__main__' == __name__:
             serial.Serial(port)
             break
         except serial.serialutil.SerialException:
-            print('{} is in use.'.format(port))
+            print(f'{port} is in use.')
 
-    print('Using {}'.format(port))
+    print(f'Using {port}')
 
     with serial.Serial(port, 115200, timeout=1) as ser:
 
@@ -50,7 +50,7 @@ if '__main__' == __name__:
                 print('Found "{}" (ID={}); battery: {:.1f} V; {}.'.format(config['name'],
                                                                          config['id'],
                                                                          kiwi.get_battery_voltage(),
-                                                                         'LOGGING' if kiwi.is_logging() else 'NOT logging',
+                                                                         'LOGGING' if kiwi.is_logging() else 'not logging',
                                                                          ))
 
                 if kiwi.is_logging():
@@ -64,10 +64,9 @@ Your choice:
                         for k in config:
                             print('{}={}'.format(k,  config[k]))
                     elif '2' == r:
-                        r = input("""Are you sure? (type "yes" then hit RETURN if so.)""").strip().lower().replace('"', '')
-                        if r == 'yes':
+                        r = input("""Type "stop" then hit RETURN to confirm.""").strip().lower().replace('"', '')
+                        if r == 'stop':
                             kiwi.stop_logging()
-                            
 
                 else:   # not logging
                     r = input("""
@@ -85,16 +84,20 @@ Your choice:
                             print('{}={}'.format(k, config[k]))
 
                     elif '2' == r:
-                        D,STRIDE = birdseye_read(kiwi, 128)
-                        birdseye_plot(D, STRIDE, config, kiwi.get_sample_count(), USE_UTC)
+                        if kiwi.get_sample_count() <= 0:
+                            print('Logger is empty.')
+                        else:
+                            D,STRIDE = birdseye_read(kiwi, 128)
+                            birdseye_plot(D, STRIDE, config, kiwi.get_sample_count(), USE_UTC)
 
                     elif '3' == r:
                         fn_bin = read_memory(kiwi)
-                        fn_csv = fn_bin.rsplit('.')[0] + '.csv'
-                        bin2csv(fn_bin, fn_csv, config)
-                        save_most_recent_id(config['id'])
-                        print('Output CSV file: {}'.format(fn_csv))
-                        print('Output binary file: {}'.format(fn_bin))
+                        if fn_bin is not None:
+                            fn_csv = fn_bin.rsplit('.')[0] + '.csv'
+                            bin2csv(fn_bin, fn_csv, config)
+                            save_most_recent_id(config['id'])
+                            print('Output CSV file: {}'.format(fn_csv))
+                            print('Output binary file: {}'.format(fn_bin))
 
                     elif '4' == r:
                         if 0 != kiwi._version:
@@ -115,11 +118,11 @@ Your choice:
                         kiwi.set_logging_interval(interval)
 
                     elif '5' == r:
-                        r = input('Type "yes" to confirm:')
-                        if 'yes' == r.strip().replace('"', '').lower():
+                        r = input('Type "clear" to confirm:')
+                        if 'clear' == r.strip().replace('"', '').lower():
                             clear_memory(ser)
                         else:
-                            print('No change made.')
+                            print('No change was made.')
 
                     elif '6' == r:
                         # Turn off LEDs
@@ -136,7 +139,7 @@ Your choice:
                         print('Logger time: {} ({} UTC); delta={:.3f} s'.format(
                             ts2dt(device_time, utc=False),
                             ts2dt(device_time, utc=True),
-                            abs(device_time - time.time())
+                            time.time() - device_time
                             ))
 
                         count = kiwi.get_sample_count()

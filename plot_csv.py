@@ -84,9 +84,11 @@ if '__main__' == __name__:
     if logger_name is not None:
         logger_name = logger_name.strip()
         if len(logger_name):
-            fig.suptitle(fn + ' ("{}")'.format(logger_name))
+            #fig.suptitle(fn + ' ("{}")'.format(logger_name))
+            ax[0].set_title(fn + ' ("{}")'.format(logger_name))
     else:
-        fig.suptitle(fn)
+        #fig.suptitle(fn)
+        ax[0].set_title(fn)
 
     ax[0].plot_date(dt, t, 'r.:', label='℃')
     ax[1].plot_date(dt, p, '.:', label='kPa')

@@ -43,7 +43,10 @@ def select_interval(kiwi, use_light_sensors):
             # a numeric code, not in any real time unit
             # check the C definitions for the code-to-second mapping
             # internally, logger uses {0,1,2...}
-            logging_interval_code = {'a':200, 'b':1000, 'c':60000, '':1000}.get(r, None)
+            logging_interval_code = {'a':200,
+                                     'b':1000,
+                                     'c':60000,
+                                     '':1000}.get(r, None)
     else:
         if use_light_sensors:
             # 65536 pages, 256 bytes per page, 4+4+2+2+2+2+2+2 bytes per sample (with light)
@@ -61,25 +64,37 @@ def select_interval(kiwi, use_light_sensors):
             for k,choice in enumerate(choices):
                 print('  {}'.format(choice) + ('; DEFAULT' if k == default else ''))
             r = input('Your choice: ').strip().lower()
-            logging_interval_code = {'a':250, 'b':500, 'c':1000, 'd':5000, 'e':10000, 'f':30000, 'g':60000, '':5000}.get(r, None)
+            logging_interval_code = {'a':250,
+                                     'b':500,
+                                     'c':1000,
+                                     'd':5000,
+                                     'e':10000,
+                                     'f':30000,
+                                     'g':60000,
+                                     '':5000}.get(r, None)
         else:
             # not using light sensors
             # 65536 pages, 256 bytes per page, 4+4 bytes per sample (without light)
             # max. number of measurements = 65536*(256//8)
-            choices = ['A. 0.125 second (~3 days)',
-                       'B. 0.25 second (~6 days)',
-                       'C. 0.5 second (~12 days)',
-                       'D. 1 second (~24 days)',
-                       'E. 5 seconds (~4 months)',
-                       'F. 10 seconds (~8 months; battery-limited)',
-                       'G. 30 seconds (~2 years; battery-limited)',
+            choices = ['A. 0.25 second (~6 days)',
+                       'B. 0.5 second (~12 days)',
+                       'C. 1 second (~24 days)',
+                       'D. 5 seconds (~4 months)',
+                       'E. 10 seconds (~8 months; battery-limited)',
+                       'F. 30 seconds (~2 years; battery-limited)',
                        ]
             default = 3
             print('Pick a sampling interval:')
             for k,choice in enumerate(choices):
                 print('  {}'.format(choice) + ('; DEFAULT' if k == default else ''))
             r = input('Your choice: ').strip().lower()
-            logging_interval_code = {'a':125, 'b':250, 'c':500, 'd':1000, 'e':5000, 'f':10000, 'g':30000, '':1000}.get(r, None)
+            logging_interval_code = {'a':250,
+                                     'b':500,
+                                     'c':1000,
+                                     'd':5000,
+                                     'e':10000,
+                                     'f':30000,
+                                     '':1000}.get(r, None)
 
     return logging_interval_code
 

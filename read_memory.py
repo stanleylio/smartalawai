@@ -42,8 +42,8 @@ def read_memory(kiwi):
     last_used_page = kiwi.find_last_used_page()
     used_page_count = last_used_page + 1 if last_used_page is not None else 0
     if 0 == used_page_count:
-        print('Logger is empty. ABORT.')
-        sys.exit()
+        print('Logger is empty.')
+        return None
     print('{:,} samples (~{:.0f}% full)'.format(kiwi.get_sample_count(),
                                               100*used_page_count/Kiwi.SPI_FLASH_PAGE_COUNT))
 
@@ -51,8 +51,8 @@ def read_memory(kiwi):
     if tmp < 1.1:
         r = input('Battery voltage is rather low ({:.1f} V). Proceed regardless? (yes/no; default=yes)'.format(tmp))
         if r.strip().lower() in ['no', 'n']:
-            print('No change made. ABORT.')
-            sys.exit()
+            print('No change was made.')
+            return None
 
     makedirs(join('data', config['id']), exist_ok=True)
 
@@ -68,20 +68,20 @@ def read_memory(kiwi):
     if exists(fn_bin):
         r = input(fn_bin + ' already exists. Overwrite? (yes/no; default=no)')
         if r.strip().lower() != 'yes':
-            print('ABORT.')
-            sys.exit()
+            print('No change was made.')
+            return None
 
     starttime = time.time()
     should_continue = True
     with open(fn_bin, 'wb') as fout:
         for begin, end in split_range(BEGIN, END, CHUNK_SIZE):
             #print('Reading {:X} to {:X} ({:.2f}%; {:.2f}% of total capacity; time elapse: {})'.\
-            print('Reading {:X} to {:X} (~{:.2f}%; time elapse: {})'.\
+            print('Reading {:X} to {:X} (~{:.2f}%; time elapsed: {})'.\
                   format(begin,
                          end,
                          100*(end//Kiwi.SPI_FLASH_PAGE_SIZE_BYTE)/Kiwi.SPI_FLASH_PAGE_COUNT,
                          #end/Kiwi.SPI_FLASH_SIZE_BYTE*100,
-                         timedelta(seconds=time.time() - starttime)))
+                         timedelta(seconds=int(time.time() - starttime))))
             for _ in range(16):
                 try:
                     line = kiwi.read_range_core(begin, end)
@@ -105,6 +105,7 @@ def read_memory(kiwi):
                 print('Reached empty section in memory.')
                 break
             fout.write(line)
+            fout.flush()
     endtime = time.time()
     print('Took {:.1f} minutes.'.format((endtime - starttime)/60))
     return fn_bin

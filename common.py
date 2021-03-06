@@ -19,7 +19,6 @@ from dev.crc_check import check_response
 from datetime import datetime
 from os.path import exists, join, dirname
 import platform, glob, json
-from os.path import exists, join, dirname
 
 
 SAMPLE_INTERVAL_CODE_MAP = {0:1/5, 1:1, 2:60}

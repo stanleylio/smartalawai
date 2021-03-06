@@ -66,7 +66,7 @@ class Kiwi:
             config = {
                 'start':int(r[0]),
                 'stop':int(r[1]),
-                'interval_ms':{'0':200, '1':1000, '2':60000}[r[2]]}
+                'interval_ms':{'0':200, '1':1000, '2':60000}.get(r[2])}
 
             self._ser.write(b'get_logger_name')
             r = self._ser.readline().strip()
@@ -89,6 +89,7 @@ class Kiwi:
         else:
             try:
                 self._ser.write(b'get_config')
+                self._ser.flushOutput()
                 r = self._ser.readline()
                 logger.debug(r)
                 config = json.loads(r.decode().strip())
@@ -103,7 +104,7 @@ class Kiwi:
             except json.decoder.JSONDecodeError:
                 logger.debug(r)
                 if 0 == len(r):
-                    logger.warning('No response from anything.')
+                    logger.warning('(no response)')
                 raise RuntimeError('Could not get config from logger.')
 
         return self._config

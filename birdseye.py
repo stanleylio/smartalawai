@@ -10,6 +10,8 @@ from matplotlib.dates import DateFormatter
 def birdseye_read(kiwi, downsample_N):
     config = kiwi.get_config(use_cached=True)
     sample_count = kiwi.get_sample_count()
+    #if sample_count <= 0:
+    #    return None,None
     number_to_read = min(downsample_N, sample_count)
     STRIDE = int(sample_count//number_to_read)
     m = '{:,} in steps of {:,}'.format(number_to_read, STRIDE) if STRIDE > 1 else 'everything'
