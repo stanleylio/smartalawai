@@ -9,11 +9,12 @@ from bin2csv import bin2csv
 
 if '__main__' == __name__:
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger('kiwi').setLevel(logging.INFO)
 
     USE_UTC = False
 
-    while True:    
+    while True:
         try:
             L = serial_port_best_guess2()
             if 1 == len(L):
@@ -46,17 +47,18 @@ if '__main__' == __name__:
                 
                 kiwi = Kiwi(ser)
                 config = kiwi.get_config(use_cached=True)
+                is_logging = kiwi.is_logging()
 
                 print('Found "{}" (ID={}); battery: {:.1f} V; {}.'.format(config['name'],
                                                                          config['id'],
                                                                          kiwi.get_battery_voltage(),
-                                                                         'LOGGING' if kiwi.is_logging() else 'not logging',
+                                                                         'LOGGING' if is_logging else 'not logging',
                                                                          ))
 
-                if kiwi.is_logging():
+                if is_logging:
                     r = input("""
 What would you like to do?
-    1. Show configuration
+    1. See configuration
     2. Stop logging (!)
 Your choice:
 """).strip()
@@ -64,19 +66,20 @@ Your choice:
                         for k in config:
                             print('{}={}'.format(k,  config[k]))
                     elif '2' == r:
-                        r = input("""Type "stop" then hit RETURN to confirm.""").strip().lower().replace('"', '')
+                        r = input("""Type "stop" then hit RETURN to confirm:""").strip().lower().replace('"', '')
                         if r == 'stop':
                             kiwi.stop_logging()
 
                 else:   # not logging
                     r = input("""
 What would you like to do?
-    1. Show configuration
+    1. See configuration
     2. Show memory overview
     3. Read memory to file
     4. Configure logger
-    5. Clear memory
-    6. Start logging now
+    5. Rename logger
+    6. Clear memory
+    7. Start logging now
 Your choice:
 """).strip()
                     if '1' == r:
@@ -118,13 +121,23 @@ Your choice:
                         kiwi.set_logging_interval(interval)
 
                     elif '5' == r:
+                        newname = input('Enter new name (max. 15 characters):').strip()
+                        if len(newname) > 15:
+                            print('(The new name has been truncated.)')
+                            newname = newname[:15]
+                        ser.write('set_logger_name{}\n'.format(newname).encode())
+                        time.sleep(0.5)
+                        
+                        print('Logger name set to "{}"'.format(kiwi.get_config()['name']))
+
+                    elif '6' == r:
                         r = input('Type "clear" to confirm:')
                         if 'clear' == r.strip().replace('"', '').lower():
                             clear_memory(ser)
                         else:
                             print('No change was made.')
 
-                    elif '6' == r:
+                    elif '7' == r:
                         # Turn off LEDs
                         #ser.write(b'red_led_off green_led_off blue_led_off' if 0 == kiwi._version else b'roffgoffboff')
                         ser.write(b'  reset')
@@ -149,6 +162,8 @@ Your choice:
                             kiwi.start_logging()
                             print('Logger is{} logging.'.format('' if kiwi.is_logging() else ' not'))
 
+            except RuntimeError:
+                print('(Logger not detected)')
             except Exception as e:
                 logging.exception(e)
                 #raise

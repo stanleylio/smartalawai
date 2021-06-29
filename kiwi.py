@@ -1,7 +1,9 @@
-import json, logging, sys, string, struct, time, math
+import json, logging, sys, string, struct, time, math, re
 from dev.crc_check import check_response
 
+
 logger = logging.getLogger(__name__)
+
 
 class Kiwi:
     SPI_FLASH_SIZE_BYTE = 16*1024*1024
@@ -92,6 +94,7 @@ class Kiwi:
                 self._ser.flushOutput()
                 r = self._ser.readline()
                 logger.debug(r)
+                r = re.sub(rb'\bnan\b', b'NaN', r)
                 config = json.loads(r.decode().strip())
                 if 'stop' not in config:
                     config['stop'] = None
@@ -148,21 +151,25 @@ class Kiwi:
         buf = self.read_page(last_page_index)
         assert not all([0xff == x for x in buf])
         # I have no idea what I wrote.
-        byte_used = Kiwi.SPI_FLASH_PAGE_SIZE_BYTE - next(k for k,v in enumerate(reversed(buf)) if v not in [0, 0xff])
-        # Careful, last_page_index is 0-based. The number of non-empty pages is last_page_index + 1, but
-        # here you are summing up the full pages plus the bits in the last (possibly non-full) page.
+        byte_used = Kiwi.SPI_FLASH_PAGE_SIZE_BYTE - next(k for k,v in enumerate(reversed(buf)) if v not in {0, 0xff})
+        # Careful, last_page_index is 0-based. The number of non-empty
+        # pages is last_page_index + 1, but here you are summing up the
+        # full pages plus the bits in the last (possibly non-full) page.
         # Really it is (last_page_index + 1 - 1).
         return last_page_index*(Kiwi.SPI_FLASH_PAGE_SIZE_BYTE//self.SAMPLE_SIZE_BYTE) + byte_used//self.SAMPLE_SIZE_BYTE
         # huh. is A//X + B//X === (A + B)//X? Is the // operator distributive? Can I do
         # (last_page*SPI_FLASH_PAGE_SIZE_BYTE + byte_used)//SAMPLE_SIZE_BYTE?
         # Nope. 7//10 + 3//10 != 10//10
-        # What about the associative property? The * vs. the //, does it matter if I leave out the ()?
-        # It does and you must not. 2*(5//10) != (2*5)//10
-        # The * takes precedence over the //, so leaving out the () would be wrong.
-        # You could have just kept the sampe_per_page = SPI_FLASH_PAGE_SIZE_BYTE//SAMPLE_SIZE_BYTE line you know.
+        # "What about the associative property? The * vs. the //, does
+        # it matter if I leave out the ()?"
+        # It does and you must not. 2*(5//10) != (2*5)//10. The * takes
+        # precedence over the //, so leaving out the () would be wrong.
+        # You could have just kept the sample_per_page =
+        # SPI_FLASH_PAGE_SIZE_BYTE//SAMPLE_SIZE_BYTE line you know.
 
     def find_last_used_page(self):
-        # in principle you only need to check the first byte. but god knows how the flash layout might change in later versions.
+        # in principle you only need to check the first byte. but god
+        # knows how the flash layout might change in later versions.
         is_empty = lambda s: all([0xff == x for x in s])
 
         def search(begin, end):

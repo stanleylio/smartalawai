@@ -1,7 +1,7 @@
 import logging, sys, struct, math
 from serial import Serial
 from kiwi import Kiwi
-from datetime import datetime
+from datetime import datetime, timedelta
 from common import ts2dt, dt2ts
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
@@ -72,11 +72,17 @@ def birdseye_plot(D, STRIDE, config, sample_count, use_utc):
         ax[0].set_title('Memory Overview (plotting everything)')
         
     # add caption
+    span = max(D[0]) - min(D[0])
+    if span > timedelta(days=2):
+        span = '{:.1f} days'.format(span.total_seconds()/3600/24)
+    else:
+        span = '{:.1f} hours'.format(span.total_seconds()/3600)
+        
     s = 'Logger "{}" (ID={})'.format(config['name'], config['id'])
-    s += '\n{:,} samples from {} to {} spanning ~{:.1f} days'.format(sample_count,
-                                                                   min(D[0]).isoformat()[:19].replace('T', ' '),
-                                                                   max(D[0]).isoformat()[:19].replace('T', ' '),
-                                                                   (max(D[0]) - min(D[0])).total_seconds()/3600/24)
+    s += '\n{:,} samples from {} to {} spanning ~{}'.format(sample_count,
+                                                            min(D[0]).isoformat()[:19].replace('T', ' '),
+                                                            max(D[0]).isoformat()[:19].replace('T', ' '),
+                                                            span,)
     s += '\nSample interval={:.3f} second{}'.format(config['interval_ms']*1e-3, 's' if config['interval_ms'] > 1000 else '')
 
     if STRIDE > 1:
